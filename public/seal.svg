@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <rect x="4" y="4" width="72" height="72" rx="4" fill="#8B2331"></rect>
+  <rect x="8" y="8" width="64" height="64" rx="2" fill="none" stroke="#FBF7EE" stroke-width="2"></rect>
+  <g fill="#FBF7EE" font-family="Noto Serif SC, serif" font-weight="700" text-anchor="middle">
+    <text x="26" y="40" font-size="28">天</text>
+    <text x="54" y="40" font-size="28">閣</text>
+    <text x="26" y="68" font-size="13" opacity="0.85">之</text>
+    <text x="54" y="68" font-size="13" opacity="0.85">印</text>
+  </g>
+</svg>

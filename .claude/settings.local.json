@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://api.anthropic.com/v1/design/h/ks3irnjCnsTUxk1WV4Fayw\" --max-filesize 10000000)",
+      "Bash(curl -s -H \"Accept-Encoding: identity\" \"https://api.anthropic.com/v1/design/h/ks3irnjCnsTUxk1WV4Fayw\")",
+      "Bash(gunzip -c /tmp/design_file)",
+      "Bash(tar -x -C /tmp/design)",
+      "Read(//tmp/**)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}
