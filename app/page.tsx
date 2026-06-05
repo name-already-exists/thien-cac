@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { STORIES, type Story } from "@/lib/data";
+import type { Story } from "@/lib/data";
 import { Header } from "@/components/tvc/header";
 import { Home } from "@/components/tvc/home";
 import { StoryDetail } from "@/components/tvc/story-detail";
@@ -12,29 +12,31 @@ type Screen = "home" | "detail" | "reader" | "library";
 
 type AppState = {
   screen: Screen;
-  storyId: string | null;
+  story: Story | null;
+  chapterNumber: number;
 };
 
 export default function Page() {
-  const [state, setState] = useState<AppState>({ screen: "home", storyId: null });
+  const [state, setState] = useState<AppState>({
+    screen: "home",
+    story: null,
+    chapterNumber: 1,
+  });
   const [query, setQuery] = useState("");
 
-  const story = state.storyId
-    ? (STORIES.find((s) => s.id === state.storyId) ?? STORIES[0])
-    : STORIES[0];
+  const nav = (patch: Partial<AppState>) =>
+    setState((prev) => ({ ...prev, ...patch }));
 
-  const nav = (target: { screen: Screen; storyId?: string | null }) => {
-    setState((prev) => ({ ...prev, ...target }));
-  };
+  const goDetail = (s: Story) => nav({ screen: "detail", story: s });
+  const goRead   = (s: Story, chapterNumber = 1) =>
+    nav({ screen: "reader", story: s, chapterNumber });
 
-  const goDetail = (s: Story) => nav({ screen: "detail", storyId: s.id });
-  const goRead = (s: Story) => nav({ screen: "reader", storyId: s.id });
-
-  if (state.screen === "reader") {
+  if (state.screen === "reader" && state.story) {
     return (
       <div className="tvc-app">
         <Reader
-          story={story}
+          story={state.story}
+          chapterNumber={state.chapterNumber}
           onBack={() => nav({ screen: "detail" })}
           onDetail={goDetail}
         />
@@ -55,9 +57,9 @@ export default function Page() {
         {state.screen === "home" && (
           <Home onPick={goDetail} onRead={goRead} />
         )}
-        {state.screen === "detail" && (
+        {state.screen === "detail" && state.story && (
           <StoryDetail
-            story={story}
+            story={state.story}
             onRead={goRead}
             onBack={() => nav({ screen: "home" })}
           />
@@ -68,10 +70,7 @@ export default function Page() {
       </main>
 
       <footer className="tvc-footer">
-        <div
-          className="tvc-divider-orn"
-          style={{ margin: "0 auto 16px" }}
-        >
+        <div className="tvc-divider-orn" style={{ margin: "0 auto 16px" }}>
           <div className="line" />
           <div className="dot" />
           <div className="diamond" />
