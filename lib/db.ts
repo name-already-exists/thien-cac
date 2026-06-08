@@ -84,6 +84,18 @@ function mapChapter(row: any): Chapter {
 // Queries
 // ----------------------------------------------------------------
 
+/** Một truyện theo slug */
+export async function fetchStoryBySlug(slug: string): Promise<Story | null> {
+  const { data, error } = await createClient()
+    .from('stories')
+    .select(STORY_SELECT)
+    .eq('slug', slug)
+    .maybeSingle()
+  if (error || !data) return null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return mapStory(data as any)
+}
+
 /** Tất cả truyện — dùng cho home (derive ranked/featured/recent client-side) và library */
 export async function fetchAllStories(): Promise<Story[]> {
   const { data, error } = await createClient()

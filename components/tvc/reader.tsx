@@ -10,6 +10,8 @@ type Props = {
   chapterNumber: number;
   onBack: () => void;
   onDetail: (s: Story) => void;
+  onChapterNav?: (num: number) => void;
+  onChapterLoad?: (num: number, title: string) => void;
 };
 
 type Theme = "paper" | "sepia" | "green" | "night";
@@ -42,7 +44,7 @@ function OrnDivider({ color }: { color?: string }) {
   );
 }
 
-export function Reader({ story, chapterNumber, onBack, onDetail }: Props) {
+export function Reader({ story, chapterNumber, onBack, onDetail, onChapterNav, onChapterLoad }: Props) {
   const [currentChapter, setCurrentChapter] = useState(chapterNumber);
   const [chapterData, setChapterData] = useState<{
     title: string;
@@ -62,8 +64,9 @@ export function Reader({ story, chapterNumber, onBack, onDetail }: Props) {
     fetchChapterContent(story.dbId, currentChapter).then((data) => {
       setChapterData(data ? { title: data.title, content: data.content } : null);
       setLoading(false);
+      if (data) onChapterLoad?.(currentChapter, data.title);
     });
-  }, [story.dbId, currentChapter]);
+  }, [story.dbId, currentChapter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync với prop khi parent thay đổi chương (e.g. navigate từ chapter list)
   useEffect(() => {
@@ -130,7 +133,11 @@ export function Reader({ story, chapterNumber, onBack, onDetail }: Props) {
           <button
             className="tvc-btn tvc-btn-secondary"
             disabled={!hasPrev}
-            onClick={() => setCurrentChapter((n) => n - 1)}
+            onClick={() => {
+              const n = currentChapter - 1;
+              setCurrentChapter(n);
+              onChapterNav?.(n);
+            }}
           >
             <Icon name="chevronLeft" size={16} /> Chương trước
           </button>
@@ -140,7 +147,11 @@ export function Reader({ story, chapterNumber, onBack, onDetail }: Props) {
           <button
             className="tvc-btn tvc-btn-primary"
             disabled={!hasNext}
-            onClick={() => setCurrentChapter((n) => n + 1)}
+            onClick={() => {
+              const n = currentChapter + 1;
+              setCurrentChapter(n);
+              onChapterNav?.(n);
+            }}
           >
             Chương sau <Icon name="chevronRight" size={16} />
           </button>
