@@ -584,12 +584,38 @@
 .tvc-detail-body { padding: 32px 0 64px; display: grid; grid-template-columns: 1fr 320px; gap: 40px; }
 .tvc-detail-desc { font-family: var(--font-reader); font-size: 15px; line-height: 1.7; color: var(--fg-1); }
 .tvc-chapter-list { background: var(--bg-card); border-radius: 12px; padding: 8px; box-shadow: var(--shadow-sm); max-height: 480px; overflow-y: auto; }
+.tvc-chapter-list.two-col { display: grid; grid-template-columns: repeat(2, 1fr); max-height: none; overflow-y: visible; }
 .tvc-chapter-list .row { display: flex; padding: 10px 14px; border-radius: 6px; cursor: pointer; gap: 12px; font-size: 13px; align-items: center; }
 .tvc-chapter-list .row:hover { background: var(--bg-inset); }
-.tvc-chapter-list .row .num { color: var(--fg-3); font-family: var(--font-mono-tvc); font-size: 12px; min-width: 38px; }
+.tvc-chapter-list .row .num { color: var(--fg-3); font-family: var(--font-mono-tvc); font-size: 12px; min-width: 72px; flex-shrink: 0; }
 .tvc-chapter-list .row .name { color: var(--fg-1); flex: 1; }
 .tvc-chapter-list .row .date { color: var(--fg-3); font-size: 11px; }
 .tvc-chapter-list .row.read .name { color: var(--fg-3); }
+
+/* ─── Pagination ─── */
+.tvc-pagination { display: flex; align-items: center; gap: 3px; margin-top: 14px; flex-wrap: wrap; }
+.tvc-page-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; padding: 0 8px; border-radius: 6px; border: none; background: transparent; color: var(--fg-2); font-size: 13px; font-family: inherit; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.tvc-page-btn:hover:not(:disabled) { background: var(--bg-inset); color: var(--fg-1); }
+.tvc-page-btn:disabled { opacity: 0.35; cursor: default; }
+.tvc-page-btn.active { background: var(--brand-primary); color: #fff; font-weight: 600; }
+.tvc-page-btn.active:hover { background: var(--brand-primary); }
+.tvc-page-nav { color: var(--fg-3); font-size: 15px; }
+.tvc-page-ellipsis { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 36px; color: var(--fg-3); font-size: 13px; }
+
+/* ─── Recommended aside ─── */
+.tvc-rec-row { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
+.tvc-rec-row:hover { background: var(--bg-inset); }
+.tvc-rec-skeleton { height: 64px; background: var(--bg-inset); animation: tvc-pulse 1.4s ease-in-out infinite; }
+@keyframes tvc-pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+.tvc-rec-rank { font-family: var(--font-serif-vn); font-size: 20px; font-weight: 700; color: var(--fg-3); min-width: 24px; text-align: center; line-height: 1; }
+.tvc-rec-row:nth-child(1) .tvc-rec-rank { color: var(--brand-gold); }
+.tvc-rec-row:nth-child(2) .tvc-rec-rank { color: var(--fg-2); }
+.tvc-rec-row:nth-child(3) .tvc-rec-rank { color: #a0714a; }
+.tvc-rec-cover { width: 40px; height: 52px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.tvc-rec-info { flex: 1; min-width: 0; }
+.tvc-rec-title { font-size: 13px; font-weight: 600; color: var(--fg-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+.tvc-rec-meta { font-size: 11px; color: var(--fg-3); margin-top: 3px; }
+.tvc-rec-rating { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
 
 /* ─── Comment ─── */
 .tvc-comment { padding: 16px 0; border-bottom: 1px solid var(--border-1); display: flex; gap: 12px; }
@@ -700,6 +726,7 @@
   .tvc-detail-info .stat .val { font-size: 18px; }
   .tvc-detail-body { padding: 24px 0 48px; gap: 28px; }
   .tvc-chapter-list { max-height: 360px; }
+  .tvc-chapter-list.two-col { grid-template-columns: 1fr; max-height: none; }
   .tvc-reader-content { padding: 32px 0 48px; }
   .tvc-reader-content h2.chapter-title { font-size: 22px; }
   .tvc-reader-content .text { font-size: 16px; line-height: 1.8; margin-top: 32px; }

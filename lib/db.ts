@@ -107,17 +107,41 @@ export async function fetchAllStories(): Promise<Story[]> {
   return (data as any[]).map(mapStory)
 }
 
-/** Danh sách chương của một truyện (không load nội dung) */
-export async function fetchChapters(storyDbId: number): Promise<Chapter[]> {
+/** Top 5 truyện đề cử theo weekly_views, loại trừ truyện hiện tại */
+export async function fetchRecommendedStories(excludeDbId: number): Promise<Story[]> {
   const { data, error } = await createClient()
-    .from('chapters')
-    .select('chapter_number, title, published_at')
-    .eq('story_id', storyDbId)
-    .eq('is_published', true)
-    .order('chapter_number', { ascending: false })
+    .from('stories')
+    .select(STORY_SELECT)
+    .neq('id', excludeDbId)
+    .order('weekly_views', { ascending: false })
+    .limit(5)
   if (error || !data) return []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data as any[]).map(mapChapter)
+  return (data as any[]).map(mapStory)
+}
+
+/** Danh sách chương của một truyện (không load nội dung) */
+export async function fetchChapters(storyDbId: number): Promise<Chapter[]> {
+  const PAGE = 1000
+  const all: Chapter[] = []
+  let from = 0
+
+  while (true) {
+    const { data, error } = await createClient()
+      .from('chapters')
+      .select('chapter_number, title, published_at')
+      .eq('story_id', storyDbId)
+      .eq('is_published', true)
+      .order('chapter_number', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error || !data || data.length === 0) break
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    all.push(...(data as any[]).map(mapChapter))
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+
+  return all
 }
 
 /** Nội dung một chương cụ thể */

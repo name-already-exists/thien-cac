@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import type { Story, Chapter } from "@/lib/data";
-import { fetchChapters } from "@/lib/db";
+import { fetchChapters, fetchRecommendedStories } from "@/lib/db";
 import { StoryCover } from "./story-cover";
 import { Icon } from "./icons";
 
-const CHAPTERS_PER_PAGE = 100;
+const CHAPTERS_PER_PAGE = 50;
 
 function ChapterListFull({
   chapters,
@@ -73,6 +73,9 @@ function ChapterListFull({
     outline: "none",
   };
 
+  const firstChapter = sorted[0];
+  const lastChapter = sorted[sorted.length - 1];
+
   return (
     <div style={{ marginTop: 40 }}>
       <h3
@@ -80,7 +83,7 @@ function ChapterListFull({
           fontFamily: "var(--font-serif-vn)",
           fontSize: 20,
           fontWeight: 700,
-          margin: "0 0 16px",
+          margin: "0 0 14px",
           display: "flex",
           alignItems: "center",
           gap: 12,
@@ -93,53 +96,13 @@ function ChapterListFull({
         </span>
       </h3>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 6 }}>
-          <input
-            type="number"
-            min={1}
-            placeholder="Số chương"
-            value={chapterInput}
-            onChange={(e) => setChapterInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleChapterSearch()}
-            style={{ ...inputStyle, width: 110 }}
-          />
-          <button
-            className="tvc-btn tvc-btn-ghost"
-            style={{ padding: "7px 12px", fontSize: 12 }}
-            onClick={handleChapterSearch}
-          >
-            Đến chương
-          </button>
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <input
-            type="number"
-            min={1}
-            max={totalPages}
-            placeholder="Số trang"
-            value={pageInput}
-            onChange={(e) => setPageInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handlePageSearch()}
-            style={{ ...inputStyle, width: 90 }}
-          />
-          <button
-            className="tvc-btn tvc-btn-ghost"
-            style={{ padding: "7px 12px", fontSize: 12 }}
-            onClick={handlePageSearch}
-          >
-            Đến trang
-          </button>
-        </div>
-      </div>
-
-      <div className="tvc-chapter-list" style={{ maxHeight: "none" }}>
+      <div className="tvc-chapter-list two-col">
         {loading ? (
-          <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13 }}>
+          <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13, gridColumn: "1 / -1" }}>
             Đang tải…
           </div>
         ) : pageChapters.length === 0 ? (
-          <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13 }}>
+          <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13, gridColumn: "1 / -1" }}>
             Chưa có chương nào.
           </div>
         ) : (
@@ -149,7 +112,7 @@ function ChapterListFull({
               key={ch.num}
               onClick={() => onRead(story, ch.num)}
             >
-              <span className="num">{String(ch.num).padStart(3, "0")}</span>
+              <span className="num">Chương {ch.num}</span>
               <span className="name">{ch.name}</span>
               <span className="date">{ch.date}</span>
             </div>
@@ -157,48 +120,76 @@ function ChapterListFull({
         )}
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 12, flexWrap: "wrap" }}>
+        <div className="tvc-pagination">
           <button
-            className="tvc-btn tvc-btn-ghost"
-            style={{ padding: "6px 10px", fontSize: 13 }}
+            className="tvc-page-btn tvc-page-nav"
+            onClick={() => goToPage(1)}
+            disabled={currentPage === 1}
+            title="Trang đầu"
+          >
+            «
+          </button>
+          <button
+            className="tvc-page-btn tvc-page-nav"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
+            title="Trang trước"
           >
             ‹
           </button>
+
           {buildPageNumbers().map((p, i) =>
             p === "..." ? (
-              <span key={`e${i}`} style={{ padding: "0 2px", color: "var(--fg-3)", fontSize: 13 }}>…</span>
+              <span key={`e${i}`} className="tvc-page-ellipsis">…</span>
             ) : (
               <button
                 key={p}
-                className="tvc-btn tvc-btn-ghost"
-                style={{
-                  padding: "6px 10px",
-                  fontSize: 12,
-                  minWidth: 34,
-                  ...(p === currentPage
-                    ? { background: "var(--bg-inset)", color: "var(--brand-primary)", fontWeight: 700 }
-                    : {}),
-                }}
+                className={`tvc-page-btn${p === currentPage ? " active" : ""}`}
                 onClick={() => goToPage(p as number)}
               >
                 {p}
               </button>
             )
           )}
+
           <button
-            className="tvc-btn tvc-btn-ghost"
-            style={{ padding: "6px 10px", fontSize: 13 }}
+            className="tvc-page-btn tvc-page-nav"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
+            title="Trang sau"
           >
             ›
           </button>
-          <span style={{ marginLeft: 8, fontSize: 12, color: "var(--fg-3)" }}>
-            Trang {currentPage}/{totalPages}
-          </span>
+          <button
+            className="tvc-page-btn tvc-page-nav"
+            onClick={() => goToPage(totalPages)}
+            disabled={currentPage === totalPages}
+            title="Trang cuối"
+          >
+            »
+          </button>
+
+          <div style={{ display: "flex", gap: 6, marginLeft: 8 }}>
+            <input
+              type="number"
+              min={1}
+              max={totalPages}
+              placeholder="Trang"
+              value={pageInput}
+              onChange={(e) => setPageInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handlePageSearch()}
+              style={{ ...inputStyle, width: 80, fontSize: 12, padding: "5px 8px" }}
+            />
+            <button
+              className="tvc-btn tvc-btn-ghost"
+              style={{ padding: "5px 10px", fontSize: 12 }}
+              onClick={handlePageSearch}
+            >
+              Đến
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -237,6 +228,7 @@ type Props = {
 export function StoryDetail({ story, onRead }: Props) {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loadingChapters, setLoadingChapters] = useState(true);
+  const [recommended, setRecommended] = useState<Story[]>([]);
 
   useEffect(() => {
     setLoadingChapters(true);
@@ -244,6 +236,7 @@ export function StoryDetail({ story, onRead }: Props) {
       setChapters(data);
       setLoadingChapters(false);
     });
+    fetchRecommendedStories(story.dbId).then(setRecommended);
   }, [story.dbId]);
 
   const [c1, c2] = story.palette;
@@ -341,40 +334,43 @@ export function StoryDetail({ story, onRead }: Props) {
         </div>
 
         <aside>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 14 }}>
-            <h3 style={{ fontFamily: "var(--font-serif-vn)", fontSize: 18, fontWeight: 700, margin: 0 }}>
-              Danh sách chương
-            </h3>
-            <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--fg-3)" }}>
-              {story.chapters.toLocaleString("vi-VN")} chương
-            </span>
+          <h3 style={{ fontFamily: "var(--font-serif-vn)", fontSize: 18, fontWeight: 700, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <span>Đề cử</span>
+            <span style={{ fontFamily: "var(--font-serif-han)", fontSize: 13, color: "var(--fg-3)" }}>推薦</span>
+          </h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {recommended.length === 0
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="tvc-rec-row tvc-rec-skeleton" />
+                ))
+              : recommended.map((rec, i) => (
+                  <div
+                    key={rec.id}
+                    className="tvc-rec-row"
+                    onClick={() => onRead(rec)}
+                  >
+                    <span className="tvc-rec-rank">{i + 1}</span>
+                    <div
+                      className="tvc-rec-cover"
+                      style={{ background: `linear-gradient(135deg, ${rec.palette[0]}, ${rec.palette[1]})` }}
+                    >
+                      <span style={{ fontFamily: "var(--font-serif-han)", fontSize: 11, color: "rgba(255,255,255,0.9)", letterSpacing: ".1em" }}>
+                        {rec.han1}
+                      </span>
+                    </div>
+                    <div className="tvc-rec-info">
+                      <div className="tvc-rec-title">{rec.title}</div>
+                      <div className="tvc-rec-meta">
+                        {rec.genre} · {rec.chapters.toLocaleString("vi-VN")} chương
+                      </div>
+                      <div className="tvc-rec-rating">
+                        <span style={{ color: "var(--brand-gold)" }}>★</span> {rec.rating}
+                      </div>
+                    </div>
+                  </div>
+                ))
+            }
           </div>
-          <div className="tvc-chapter-list">
-            {loadingChapters ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13 }}>
-                Đang tải…
-              </div>
-            ) : chapters.length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13 }}>
-                Chưa có chương nào.
-              </div>
-            ) : (
-              chapters.map((ch) => (
-                <div
-                  className={`row ${ch.read ? "read" : ""}`}
-                  key={ch.num}
-                  onClick={() => onRead(story, ch.num)}
-                >
-                  <span className="num">{String(ch.num).padStart(3, "0")}</span>
-                  <span className="name">{ch.name}</span>
-                  <span className="date">{ch.date}</span>
-                </div>
-              ))
-            )}
-          </div>
-          <button className="tvc-btn tvc-btn-ghost" style={{ width: "100%", marginTop: 12, justifyContent: "center" }}>
-            Xem đầy đủ <Icon name="chevronRight" size={14} />
-          </button>
         </aside>
       </div>
     </div>
