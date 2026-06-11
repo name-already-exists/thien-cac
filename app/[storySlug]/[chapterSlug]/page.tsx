@@ -36,7 +36,7 @@ export default function ChapterPage() {
         chapterNumber={chapterNum}
         onBack={() => router.push(`/${storySlug}`)}
         onDetail={(s) => router.push(`/${s.id}`)}
-        onChapterNav={(num) => router.replace(`/${storySlug}/chuong-${num}`)}
+        onChapterNav={(num) => router.push(`/${storySlug}/chuong-${num}`)}
         onChapterLoad={(num, title) =>
           router.replace(`/${storySlug}/${chapterSlug(num, title)}`)
         }
