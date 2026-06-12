@@ -41,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 /thien-dao/0-crawlers/metruyenchuvn-crawler/node_modules
+/thien-dao/0-crawlers/khotruyenchu-crawler/node_modules
 /thien-dao/huyen-giam-tien-toc
 /thien-dao/tien-nghich
 /ngoc-gian/node_modules
