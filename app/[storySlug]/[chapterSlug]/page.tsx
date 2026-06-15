@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { Story } from "@/lib/data";
 import { fetchStoryBySlug } from "@/lib/db";
 import { parseChapterNum, chapterSlug } from "@/lib/slugify";
+import { saveReadingProgress } from "@/lib/reading-history";
 import { Reader } from "@/components/tvc/reader";
 
 export default function ChapterPage() {
@@ -37,9 +38,10 @@ export default function ChapterPage() {
         onBack={() => router.push(`/${storySlug}`)}
         onDetail={(s) => router.push(`/${s.id}`)}
         onChapterNav={(num) => router.push(`/${storySlug}/chuong-${num}`)}
-        onChapterLoad={(num, title) =>
-          router.replace(`/${storySlug}/${chapterSlug(num, title)}`)
-        }
+        onChapterLoad={(num, title) => {
+          if (story) saveReadingProgress(story.id, num);
+          router.replace(`/${storySlug}/${chapterSlug(num, title)}`);
+        }}
       />
     </div>
   );

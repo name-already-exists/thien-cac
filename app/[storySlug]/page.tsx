@@ -31,6 +31,7 @@ export default function StoryPage() {
         }}
         query=""
         setQuery={() => {}}
+        onSearchPick={(s) => router.push(`/${s.id}`)}
       />
 
       <main style={{ flex: 1 }}>

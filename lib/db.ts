@@ -50,7 +50,7 @@ function mapStory(row: any): Story {
     translator:  row.translators?.name  ?? '',
     genre:       row.genres?.name       ?? '',
     tags,
-    status:      row.status as 'ongoing' | 'completed',
+    status:      row.status as 'ongoing' | 'completed' | 'paused' | 'dropped',
     chapters:    row.chapter_count,
     words:       formatCount(row.word_count   ?? 0),
     rating:      Number(row.rating),

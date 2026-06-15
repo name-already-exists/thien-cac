@@ -10,7 +10,7 @@ export type Story = {
   translator: string;
   genre: string;
   tags: string[];
-  status: 'ongoing' | 'completed';
+  status: 'ongoing' | 'completed' | 'paused' | 'dropped';
   chapters: number;
   words: string;       // formatted: "9.4M"
   rating: number;

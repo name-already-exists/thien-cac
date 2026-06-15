@@ -6,8 +6,10 @@ import type { Story } from "@/lib/data";
 import { Header } from "@/components/tvc/header";
 import { Home } from "@/components/tvc/home";
 import { Library } from "@/components/tvc/library";
+import { Ranking } from "@/components/tvc/ranking";
+import { Classify } from "@/components/tvc/classify";
 
-type Screen = "home" | "library";
+type Screen = "home" | "library" | "ranking" | "classify";
 
 export default function Page() {
   const router = useRouter();
@@ -22,16 +24,21 @@ export default function Page() {
       <Header
         screen={screen}
         onNav={(target) => {
-          if (target.screen === "home") setScreen("home");
-          else if (target.screen === "library") setScreen("library");
+          const s = target.screen as Screen;
+          if (s === "home" || s === "library" || s === "ranking" || s === "classify") {
+            setScreen(s);
+          }
         }}
         query={query}
         setQuery={setQuery}
+        onSearchPick={goDetail}
       />
 
       <main style={{ flex: 1 }}>
-        {screen === "home" && <Home onPick={goDetail} onRead={goRead} />}
-        {screen === "library" && <Library onPick={goDetail} onRead={goRead} />}
+        {screen === "home"     && <Home onPick={goDetail} onRead={goRead} />}
+        {screen === "library"  && <Library onPick={goDetail} onRead={goRead} />}
+        {screen === "ranking"  && <Ranking onPick={goDetail} />}
+        {screen === "classify" && <Classify onPick={goDetail} />}
       </main>
 
       <footer className="tvc-footer">

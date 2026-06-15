@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { Story } from "@/lib/data";
 import { fetchAllStories } from "@/lib/db";
+import { getReadingHistory } from "@/lib/reading-history";
 import { StoryCover } from "./story-cover";
 import { Icon } from "./icons";
 
@@ -68,6 +69,67 @@ function StoryGridSection({
             <div className="au">{s.author}</div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function StoryListSection({
+  title,
+  han,
+  entries,
+  onPick,
+  onRead,
+}: {
+  title: string;
+  han?: string;
+  entries: { story: Story; chapter: number }[];
+  onPick: (s: Story) => void;
+  onRead: (s: Story, chapter: number) => void;
+}) {
+  return (
+    <section className="tvc-section">
+      <SectionHead title={title} han={han} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {entries.map(({ story: s, chapter }) => {
+          const pct = s.chapters > 0 ? Math.round((chapter / s.chapters) * 100) : 0;
+          const statusCls = s.status === "completed" ? "tvc-b-completed" : s.status === "paused" ? "tvc-b-paused" : "tvc-b-ongoing";
+          const statusDot = s.status === "completed" ? "#4A6FA5" : s.status === "paused" ? "#C9842C" : "#4A7C59";
+          const statusLabel = s.status === "completed" ? "Hoàn thành" : s.status === "paused" ? "Tạm ngưng" : "Đang ra";
+          return (
+            <div className="tvc-story-row" key={s.id} onClick={() => onPick(s)}>
+              <StoryCover story={s} size="sm" />
+              <div className="info">
+                <div className="title">{s.title}</div>
+                <div className="author">
+                  {s.author} · <span style={{ color: "var(--brand-primary)" }}>{s.genre}</span>
+                </div>
+                <div className="meta">
+                  <span className={`tvc-badge ${statusCls}`}>
+                    <span className="dot" style={{ background: statusDot }} />
+                    {statusLabel}
+                  </span>
+                  <span style={{ color: "var(--brand-primary)", fontWeight: 600 }}>
+                    Chương {chapter.toLocaleString("vi-VN")}
+                  </span>
+                  <span style={{ color: "var(--fg-4)" }}>/ {s.chapters.toLocaleString("vi-VN")}</span>
+                  <span>· {s.rating}★</span>
+                </div>
+                <div className="tvc-reading-bar">
+                  <div className="fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="desc">{s.desc}</div>
+                <button
+                  className="tvc-btn tvc-btn-primary tvc-btn-sm"
+                  style={{ marginTop: 10, alignSelf: "flex-start" }}
+                  onClick={(e) => { e.stopPropagation(); onRead(s, chapter); }}
+                >
+                  <Icon name="bookOpen" size={13} /> Đọc tiếp ch.{chapter}
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -256,12 +318,32 @@ export function Home({ onPick, onRead }: Props) {
     return new Date(b.lastChapterAt).getTime() - new Date(a.lastChapterAt).getTime();
   });
 
+  // Build reading list from localStorage history, matched against loaded stories
+  const history = stories.length ? getReadingHistory() : [];
+  const storyMap = new Map(stories.map((s) => [s.id, s]));
+  const readingEntries = history
+    .map((e) => ({ story: storyMap.get(e.id), chapter: e.chapter }))
+    .filter((e): e is { story: Story; chapter: number } => e.story !== undefined)
+    .slice(0, 5);
+
   return (
     <div>
       <FeaturedGrid stories={stories} onPick={onPick} onRead={onRead} />
       <div className="tvc-container">
         <div className="tvc-home-grid">
           <div>
+            {readingEntries.length > 0 && (
+              <>
+                <StoryListSection
+                  title="Đang đọc dở"
+                  han="續讀"
+                  entries={readingEntries}
+                  onPick={onPick}
+                  onRead={(s, chapter) => onRead(s, chapter)}
+                />
+                <OrnDivider />
+              </>
+            )}
             <StoryGridSection
               title="Vừa cập nhật"
               han="新章"
