@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import readline from 'readline';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
@@ -108,6 +109,16 @@ async function translateToHan(text) {
   }
 }
 
+function confirmPrompt(question) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase());
+    });
+  });
+}
+
 // ─── DB operations ────────────────────────────────────────────────────────────
 
 /** Tìm record theo name (hoặc slug nếu name chưa khớp); nếu không có thì tạo mới. Trả về id. */
@@ -195,6 +206,31 @@ async function upsertChapter({ storyId, chapterNumber, title, wordCount, publish
   return data.id;
 }
 
+/** Xóa truyện + toàn bộ chương + nội dung chương theo slug. Trả về null nếu không tìm thấy. */
+async function removeStory(slug) {
+  const db = getDb();
+  const { data: story, error: findErr } = await db.from('stories').select('id, title').eq('slug', slug).maybeSingle();
+  if (findErr) throw new Error(`Tìm truyện: ${findErr.message}`);
+  if (!story) return null;
+
+  const { data: chapters, error: chErr } = await db.from('chapters').select('id').eq('story_id', story.id);
+  if (chErr) throw new Error(`Lấy danh sách chương: ${chErr.message}`);
+  const chapterIds = (chapters || []).map(c => c.id);
+
+  if (chapterIds.length > 0) {
+    const { error: contentErr } = await db.from('chapter_contents').delete().in('chapter_id', chapterIds);
+    if (contentErr) throw new Error(`Xóa nội dung chương: ${contentErr.message}`);
+
+    const { error: chapDelErr } = await db.from('chapters').delete().eq('story_id', story.id);
+    if (chapDelErr) throw new Error(`Xóa chương: ${chapDelErr.message}`);
+  }
+
+  const { error: storyDelErr } = await db.from('stories').delete().eq('id', story.id);
+  if (storyDelErr) throw new Error(`Xóa truyện: ${storyDelErr.message}`);
+
+  return { id: story.id, title: story.title, chapterCount: chapterIds.length };
+}
+
 /** Upsert nội dung chương (1-1 với chapters). */
 async function upsertChapterContent({ chapterId, content }) {
   const db = getDb();
@@ -212,7 +248,7 @@ async function upsertChapterContent({ chapterId, content }) {
 
 function parseArgs() {
   const args   = process.argv.slice(2);
-  const result = { slug: null, from: null, to: null, chapter: null, env: null, han: null, dry: false };
+  const result = { slug: null, from: null, to: null, chapter: null, env: null, han: null, dry: false, remove: false, yes: false };
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -222,6 +258,8 @@ function parseArgs() {
     else if (a === '--env'     && args[i + 1]) result.env     = args[++i];
     else if (a === '--han'     && args[i + 1]) result.han     = args[++i];
     else if (a === '--dry')                    result.dry     = true;
+    else if (a === '--remove')                 result.remove  = true;
+    else if (a === '--yes')                    result.yes     = true;
     else if (!a.startsWith('-'))               result.slug    = a;
   }
 
@@ -242,6 +280,8 @@ Options:
   --han "仙逆"  Tên Hán tự (nếu không có, tự dịch qua Google Translate)
   --env path    Đường dẫn file .env (mặc định: ../.env.local)
   --dry         Chỉ đọc file, không ghi vào DB
+  --remove      Xóa truyện (và toàn bộ chương + nội dung) khỏi Supabase
+  --yes         Bỏ qua xác nhận khi dùng --remove
 
 Ví dụ:
   node index.js tien-nghich
@@ -249,14 +289,56 @@ Ví dụ:
   node index.js tien-nghich --from 101 --to 200
   node index.js tien-nghich --chapter 50
   node index.js huyen-giam-tien-toc --from 1 --to 500
+  node index.js tien-nghich --remove
+  node index.js tien-nghich --remove --yes
 
 Lưu ý:
   - Đọc dữ liệu từ:   thien-dao/<slug>/
   - Chương đã có sẽ được cập nhật (upsert)
+  - --remove chỉ xóa trong Supabase, KHÔNG xóa file local trong thien-dao/<slug>/
   - Biến môi trường cần thiết:
       NEXT_PUBLIC_SUPABASE_URL
       SUPABASE_SERVICE_ROLE_KEY   ← ưu tiên (hoặc NEXT_PUBLIC_SUPABASE_ANON_KEY)
 `);
+}
+
+// ─── Remove story ─────────────────────────────────────────────────────────────
+
+async function runRemove(slug, skipConfirm) {
+  console.log(`\nTruyện  : ${slug}`);
+  console.log('Chế độ  : --remove (xóa truyện khỏi Supabase)');
+  console.log('─'.repeat(52));
+
+  const db = getDb();
+  const { data: story, error: findErr } = await db.from('stories').select('id, title').eq('slug', slug).maybeSingle();
+  if (findErr) { console.error(`Lỗi tìm truyện: ${findErr.message}`); process.exit(1); }
+  if (!story) { console.log('Không tìm thấy truyện trong DB (slug không khớp).'); process.exit(0); }
+
+  const { count: chapterCount, error: countErr } = await db
+    .from('chapters').select('id', { count: 'exact', head: true }).eq('story_id', story.id);
+  if (countErr) { console.error(`Lỗi đếm chương: ${countErr.message}`); process.exit(1); }
+
+  console.log(`Tên      : ${story.title}`);
+  console.log(`Số chương: ${chapterCount ?? 0}`);
+
+  if (!skipConfirm) {
+    const answer = await confirmPrompt(
+      `\nXóa VĨNH VIỄN truyện "${story.title}" và toàn bộ ${chapterCount ?? 0} chương? (gõ "yes" để xác nhận): `
+    );
+    if (answer !== 'yes') { console.log('Đã hủy.'); process.exit(0); }
+  }
+
+  process.stdout.write('\nĐang xóa...');
+  try {
+    const result = await removeStory(slug);
+    console.log(' OK');
+    console.log('\n' + '─'.repeat(52));
+    console.log(`Hoàn thành: đã xóa "${result.title}" (${result.chapterCount} chương).`);
+  } catch (err) {
+    console.log(' THẤT BẠI');
+    console.error(`Lỗi: ${err.message}`);
+    process.exit(1);
+  }
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -266,6 +348,11 @@ async function main() {
   if (!args.slug) { printHelp(); process.exit(0); }
 
   loadEnv(args.env || path.join(__dirname, '../.env.local'));
+
+  if (args.remove) {
+    await runRemove(args.slug, args.yes);
+    return;
+  }
 
   const storyDir = path.join(THIEN_DAO_BASE, args.slug);
   if (!fs.existsSync(storyDir)) {

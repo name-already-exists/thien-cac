@@ -119,7 +119,16 @@ export function Reader({ story, chapterNumber, onBack, onDetail, onChapterNav, o
           {loading ? (
             <p style={{ color: "var(--fg-3)", textAlign: "center" }}>Đang tải nội dung…</p>
           ) : chapterData?.content ? (
-            chapterData.content.split("\n\n").map((p, i) => <p key={i}>{p}</p>)
+            chapterData.content.split("\n\n").map((para, i) => (
+              <p key={i}>
+                {para.split("\n").map((line, j, arr) => (
+                  <React.Fragment key={j}>
+                    {line}
+                    {j < arr.length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </p>
+            ))
           ) : (
             <p style={{ color: "var(--fg-3)", textAlign: "center" }}>
               Nội dung chương này chưa có.
