@@ -172,13 +172,19 @@ function parseChapter(html) {
   const chapterName = m ? m[2].trim() : '';
 
   const truyen = $('.truyen');
-  let content = truyen
-    .find('p')
-    .map((_, el) => $(el).text().trim())
-    .get()
+  // Trang nguồn có thể dùng <br> để xuống dòng (trong hoặc ngoài <p>) → quy đổi thành '\n' trước,
+  // nếu không các dòng sẽ bị dính liền nhau khi lấy text.
+  truyen.find('br').replaceWith('\n');
+
+  const pTags = truyen.find('p');
+  const lines = pTags.length ? pTags.map((_, el) => $(el).text()).get() : [truyen.text()];
+
+  // Mỗi dòng (do <br> hoặc do ranh giới <p> tạo ra) đều coi là một đoạn riêng, ngăn bằng '\n\n'.
+  const content = lines
+    .flatMap((t) => t.split('\n'))
+    .map((s) => s.trim())
     .filter(Boolean)
     .join('\n\n');
-  if (!content) content = truyen.text().trim();
 
   return { chapterNumber, chapterName, content };
 }

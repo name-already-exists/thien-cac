@@ -197,14 +197,16 @@ function parseChapter(html) {
   // Lấy <p> trực tiếp bên trong .entry-content, bỏ qua nội dung bên trong .story-navigation và .reading-tools-bar
   const entryContent = $('.entry-content');
   entryContent.find('.story-navigation, .reading-tools-bar').remove();
-  // Trang nguồn dùng <br> để xuống dòng trong cùng 1 <p> → giữ lại thành '\n' trước khi lấy text,
-  // nếu không các dòng sẽ bị dính liền nhau (mất hết format gốc).
+  // Trang nguồn dùng <br> đơn để ngăn đoạn trong cùng 1 <p> → quy đổi thành '\n' trước khi lấy text.
   entryContent.find('br').replaceWith('\n');
 
-  const content = entryContent
-    .find('p')
-    .map((_, el) => $(el).text().split('\n').map((line) => line.trim()).join('\n').trim())
-    .get()
+  const pTags = entryContent.find('p');
+  const lines = pTags.length ? pTags.map((_, el) => $(el).text()).get() : [entryContent.text()];
+
+  // Mỗi dòng (do <br> hoặc do ranh giới <p> tạo ra) đều coi là một đoạn riêng, ngăn bằng '\n\n'.
+  const content = lines
+    .flatMap((t) => t.split('\n'))
+    .map((s) => s.trim())
     .filter(Boolean)
     .join('\n\n');
 

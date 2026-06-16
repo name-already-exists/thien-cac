@@ -24,6 +24,8 @@ node index.js <story-slug> [options]
 | `--chapter N` | Chỉ import đúng chương N |
 | `--env path` | Đường dẫn file .env (mặc định: `../.env.local`) |
 | `--dry` | Chỉ đọc file, không ghi vào DB |
+| `--remove` | Xóa truyện (và toàn bộ chương + nội dung) khỏi Supabase |
+| `--yes` | Bỏ qua xác nhận khi dùng `--remove` |
 | *(không có option)* | Import toàn bộ truyện |
 
 ### Ví dụ
@@ -46,6 +48,12 @@ node index.js tien-nghich --dry
 
 # Truyện khác
 node index.js huyen-giam-tien-toc --from 1 --to 500
+
+# Xóa truyện khỏi Supabase (có hỏi xác nhận)
+node index.js tien-nghich --remove
+
+# Xóa truyện, bỏ qua xác nhận
+node index.js tien-nghich --remove --yes
 ```
 
 ## Biến môi trường
@@ -90,3 +98,4 @@ thien-dao/
 - **Upsert**: Chương đã có sẽ được cập nhật, không tạo trùng.
 - **Story mới**: Các field UI (`han`, `palette`, v.v.) được đặt giá trị mặc định; có thể chỉnh sau trong Supabase.
 - **Story đã có**: Chỉ cập nhật các field từ crawler, không ghi đè field UI đã chỉnh.
+- **`--remove`**: Xóa vĩnh viễn truyện + chương + nội dung chương khỏi Supabase (theo `slug`). KHÔNG xóa file local trong `thien-dao/<slug>/`. Mặc định hỏi xác nhận (gõ `yes`), dùng `--yes` để bỏ qua.

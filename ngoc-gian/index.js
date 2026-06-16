@@ -85,7 +85,7 @@ function randomInt(min, max) {
 }
 
 function randomRating() {
-  return Math.round((Math.random() * (5 - 3.5) + 3.5) * 10) / 10;
+  return Math.round((Math.random() * (5 - 4.5) + 4.5) * 10) / 10;
 }
 
 function mapStatus(rawStatus) {

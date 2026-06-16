@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import type { Story } from "@/lib/data";
 import { fetchAllStories } from "@/lib/db";
+import { getUsername } from "@/lib/user-identity";
 import { StoryCover } from "./story-cover";
 import { Icon } from "./icons";
 
@@ -33,6 +34,11 @@ export function Header({ screen, onNav, query, setQuery, onSearchPick }: Props) 
   const [storiesLoaded, setStoriesLoaded] = useState(false);
   const [dropdownPos, setDropdownPos]     = useState<DropdownPos | null>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
+  const [username, setUsername] = useState("Đạo hữu");
+
+  useEffect(() => {
+    setUsername(getUsername());
+  }, []);
 
   const navClick = (target: { screen: Screen }) => {
     onNav(target);
@@ -152,8 +158,8 @@ export function Header({ screen, onNav, query, setQuery, onSearchPick }: Props) 
           </button>
 
           <div className="user">
-            <div className="avatar">L</div>
-            <span className="username">Lưu Bồng</span>
+            <div className="avatar">{username.charAt(0)}</div>
+            <span className="username">{username}</span>
             <Icon name="chevronDown" size={14} />
           </div>
         </div>
@@ -232,10 +238,10 @@ export function Header({ screen, onNav, query, setQuery, onSearchPick }: Props) 
           <div className="tvc-m-menu-backdrop" onClick={() => setMenuOpen(false)} />
           <nav className="tvc-m-menu">
             <div className="m-menu-user">
-              <div className="avatar" style={{ width: 44, height: 44, fontSize: 16 }}>L</div>
+              <div className="avatar" style={{ width: 44, height: 44, fontSize: 16 }}>{username.charAt(0)}</div>
               <div>
                 <div style={{ fontFamily: "var(--font-serif-vn)", fontWeight: 700, fontSize: 16 }}>
-                  Lưu Bồng
+                  {username}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--fg-3)" }}>Đạo hữu · Trúc cơ kỳ</div>
               </div>
