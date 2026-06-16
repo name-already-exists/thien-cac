@@ -74,6 +74,19 @@ function extractChapterNum(chapterStr) {
   return m ? parseInt(m[1], 10) : null;
 }
 
+function countWords(content) {
+  const trimmed = String(content).trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomRating() {
+  return Math.round((Math.random() * (5 - 3.5) + 3.5) * 10) / 10;
+}
+
 function mapStatus(rawStatus) {
   if (!rawStatus) return 'ongoing';
   const s = rawStatus.toLowerCase();
@@ -114,30 +127,15 @@ async function findOrCreate(table, name) {
 }
 
 /**
- * Nếu story đã có (theo slug): cập nhật các field từ crawler.
+ * Nếu story đã có (theo slug): bỏ qua, không update.
  * Nếu chưa có: tạo mới với default cho các field không có dữ liệu.
  * Trả về { id, isNew }.
  */
 async function upsertStory({ slug, info, authorId, genreId, han }) {
   const db = getDb();
-  const { data: existing } = await db.from('stories').select('id, han').eq('slug', slug).maybeSingle();
+  const { data: existing } = await db.from('stories').select('id').eq('slug', slug).maybeSingle();
 
   if (existing) {
-    const update = {
-      title:         info.story_name,
-      description:   info.description  || '',
-      status:        mapStatus(info.story_status),
-      chapter_count: parseInt(info.total_num_chapters, 10) || 0,
-      author_id:     authorId,
-      genre_id:      genreId,
-    };
-    // Chỉ ghi đè han/han_short nếu chưa có trong DB
-    if (han && !existing.han) {
-      update.han       = han;
-      update.han_short = han;
-    }
-    const { error } = await db.from('stories').update(update).eq('id', existing.id);
-    if (error) throw new Error(`Update story: ${error.message}`);
     return { id: existing.id, isNew: false };
   }
 
@@ -152,8 +150,13 @@ async function upsertStory({ slug, info, authorId, genreId, han }) {
     han:           han,
     han_short:     han,
     han1: '', han2: '',
-    word_count: 0, reader_count: 0, review_count: 0, rating: 0,
-    is_featured: false, weekly_views: 0, monthly_views: 0,
+    word_count:    randomInt(500000, 3000000),
+    reader_count:  randomInt(1000, 50000),
+    review_count:  randomInt(10, 500),
+    rating:        randomRating(),
+    is_featured:   false,
+    weekly_views:  randomInt(100, 5000),
+    monthly_views: randomInt(5000, 20000),
     palette:    ['#1a1a2e', '#16213e'],
     seal_color: '#8B2331',
   }).select('id').single();
@@ -165,7 +168,7 @@ async function upsertStory({ slug, info, authorId, genreId, han }) {
  * Nếu chapter đã có (story_id + chapter_number): cập nhật title.
  * Nếu chưa có: tạo mới. Trả về chapter id.
  */
-async function upsertChapter({ storyId, chapterNumber, title, publishedAt }) {
+async function upsertChapter({ storyId, chapterNumber, title, wordCount, publishedAt }) {
   const db = getDb();
   const { data: existing } = await db
     .from('chapters').select('id')
@@ -174,7 +177,7 @@ async function upsertChapter({ storyId, chapterNumber, title, publishedAt }) {
 
   if (existing) {
     const { error } = await db.from('chapters')
-      .update({ title, is_published: true })
+      .update({ title, word_count: wordCount, is_published: true })
       .eq('id', existing.id);
     if (error) throw new Error(`Update chapter ${chapterNumber}: ${error.message}`);
     return existing.id;
@@ -184,6 +187,7 @@ async function upsertChapter({ storyId, chapterNumber, title, publishedAt }) {
     story_id:       storyId,
     chapter_number: chapterNumber,
     title,
+    word_count:     wordCount,
     is_published:   true,
     published_at:   publishedAt,
   }).select('id').single();
@@ -361,7 +365,7 @@ async function main() {
     }
 
     try {
-      const chapterId = await upsertChapter({ storyId, chapterNumber: chapterNum, title, publishedAt: now });
+      const chapterId = await upsertChapter({ storyId, chapterNumber: chapterNum, title, wordCount: countWords(content), publishedAt: now });
       await upsertChapterContent({ chapterId, content });
       console.log(`   [${num}] OK — ${raw.chapter_number}: ${title}`);
       success++;

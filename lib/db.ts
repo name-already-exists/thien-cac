@@ -96,15 +96,33 @@ export async function fetchStoryBySlug(slug: string): Promise<Story | null> {
   return mapStory(data as any)
 }
 
-/** Tất cả truyện — dùng cho home (derive ranked/featured/recent client-side) và library */
-export async function fetchAllStories(): Promise<Story[]> {
-  const { data, error } = await createClient()
-    .from('stories')
-    .select(STORY_SELECT)
-    .order('weekly_views', { ascending: false })
-  if (error || !data) return []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data as any[]).map(mapStory)
+const ALL_STORIES_TTL_MS = 60_000
+let allStoriesPromise: Promise<Story[]> | null = null
+let allStoriesFetchedAt = 0
+
+/** Tất cả truyện — dùng cho home (derive ranked/featured/recent client-side) và library
+ *  Kết quả được cache ở module scope (TTL 60s) vì nhiều màn hình (Home/Library/Ranking/Classify)
+ *  cùng gọi hàm này — tránh fetch lại mỗi lần chuyển tab hoặc double-invoke effect ở dev,
+ *  trong khi vẫn lấy dữ liệu mới (view count, chương mới...) sau mỗi phút.
+ */
+export function fetchAllStories(): Promise<Story[]> {
+  const isStale = Date.now() - allStoriesFetchedAt > ALL_STORIES_TTL_MS
+  if (!allStoriesPromise || isStale) {
+    allStoriesFetchedAt = Date.now()
+    allStoriesPromise = (async () => {
+      const { data, error } = await createClient()
+        .from('stories')
+        .select(STORY_SELECT)
+        .order('weekly_views', { ascending: false })
+      if (error || !data) {
+        allStoriesPromise = null
+        return []
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data as any[]).map(mapStory)
+    })()
+  }
+  return allStoriesPromise
 }
 
 /** Top 5 truyện đề cử theo weekly_views, loại trừ truyện hiện tại */
