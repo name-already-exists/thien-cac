@@ -6,6 +6,7 @@ import readline from 'readline';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
+import { pickPaletteFor } from './palettes.js';
 
 const __dirname      = path.dirname(fileURLToPath(import.meta.url));
 const THIEN_DAO_BASE = path.join(__dirname, '../thien-dao');
@@ -168,7 +169,7 @@ async function upsertStory({ slug, info, authorId, genreId, han }) {
     is_featured:   false,
     weekly_views:  randomInt(100, 5000),
     monthly_views: randomInt(5000, 20000),
-    palette:    ['#1a1a2e', '#16213e'],
+    palette:    pickPaletteFor(info.story_name, info.description),
     seal_color: '#8B2331',
   }).select('id').single();
   if (error) throw new Error(`Insert story: ${error.message}`);
