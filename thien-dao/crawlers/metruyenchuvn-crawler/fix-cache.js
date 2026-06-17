@@ -15,7 +15,7 @@ const path = require('path');
 
 const BASE_URL = 'https://metruyenchuvn.com';
 const DELAY_MS = 1000;
-const OUTPUT_BASE = path.join(__dirname, '../..');
+const OUTPUT_BASE = path.join(__dirname, '../../storage');
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 Chrome/120',

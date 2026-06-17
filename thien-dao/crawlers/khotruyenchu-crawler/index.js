@@ -21,7 +21,7 @@ const HEADERS = {
 };
 
 // Output directory: two levels up → thien-dao/
-const OUTPUT_BASE = path.join(__dirname, '../..');
+const OUTPUT_BASE = path.join(__dirname, '../../storage');
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 

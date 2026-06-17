@@ -9,7 +9,7 @@ import WebSocket from 'ws';
 import { pickPaletteFor } from './palettes.js';
 
 const __dirname      = path.dirname(fileURLToPath(import.meta.url));
-const THIEN_DAO_BASE = path.join(__dirname, '../thien-dao');
+const THIEN_DAO_BASE = path.join(__dirname, '../thien-dao/storage');
 
 // ─── Env loader ───────────────────────────────────────────────────────────────
 
@@ -249,19 +249,20 @@ async function upsertChapterContent({ chapterId, content }) {
 
 function parseArgs() {
   const args   = process.argv.slice(2);
-  const result = { slug: null, from: null, to: null, chapter: null, env: null, han: null, dry: false, remove: false, yes: false };
+  const result = { slug: null, from: null, to: null, chapter: null, env: null, han: null, dry: false, remove: false, yes: false, storyOnly: false };
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if      (a === '--from'    && args[i + 1]) result.from    = parseInt(args[++i], 10);
-    else if (a === '--to'      && args[i + 1]) result.to      = parseInt(args[++i], 10);
-    else if (a === '--chapter' && args[i + 1]) result.chapter = parseInt(args[++i], 10);
-    else if (a === '--env'     && args[i + 1]) result.env     = args[++i];
-    else if (a === '--han'     && args[i + 1]) result.han     = args[++i];
-    else if (a === '--dry')                    result.dry     = true;
-    else if (a === '--remove')                 result.remove  = true;
-    else if (a === '--yes')                    result.yes     = true;
-    else if (!a.startsWith('-'))               result.slug    = a;
+    if      (a === '--from'        && args[i + 1]) result.from       = parseInt(args[++i], 10);
+    else if (a === '--to'          && args[i + 1]) result.to         = parseInt(args[++i], 10);
+    else if (a === '--chapter'     && args[i + 1]) result.chapter    = parseInt(args[++i], 10);
+    else if (a === '--env'         && args[i + 1]) result.env        = args[++i];
+    else if (a === '--han'         && args[i + 1]) result.han        = args[++i];
+    else if (a === '--dry')                        result.dry        = true;
+    else if (a === '--remove')                     result.remove     = true;
+    else if (a === '--yes')                        result.yes        = true;
+    else if (a === '--story-only')                 result.storyOnly  = true;
+    else if (!a.startsWith('-'))                   result.slug       = a;
   }
 
   return result;
@@ -275,6 +276,7 @@ Cách dùng:
   node index.js <story-slug> [options]
 
 Options:
+  --story-only  Chỉ upsert metadata truyện (tác giả, thể loại, truyện), không import chương
   --from N      Import từ chương N trở đi
   --to N        Import đến chương N (bao gồm)
   --chapter N   Chỉ import đúng chương N
@@ -397,6 +399,12 @@ async function main() {
     const { id, isNew } = await upsertStory({ slug: args.slug, info, authorId, genreId, han });
     storyId = id;
     console.log(` OK [id=${storyId}] ${isNew ? '(mới)' : '(cập nhật)'}`);
+
+    if (args.storyOnly) {
+      console.log('\n' + '─'.repeat(52));
+      console.log(`Story ID: ${storyId} — metadata đã upsert xong.`);
+      return;
+    }
   } else {
     console.log('[dry] bỏ qua dịch Hán tự / upsert tác giả / thể loại / truyện');
   }

@@ -15,39 +15,48 @@ npm install
 node index.js <story-slug> [options]
 ```
 
+Import chia làm 2 bước riêng biệt:
+
+**Bước 1 — Upsert metadata truyện:**
+```bash
+node index.js <story-slug> --story-only
+```
+
+**Bước 2 — Import chương:**
+```bash
+node index.js <story-slug> [options]
+```
+
 ### Options
 
-| Option | Mô tả |
-|--------|-------|
-| `--from N` | Import từ chương N trở đi |
-| `--to N` | Import đến chương N (bao gồm) |
-| `--chapter N` | Chỉ import đúng chương N |
-| `--env path` | Đường dẫn file .env (mặc định: `../.env.local`) |
-| `--dry` | Chỉ đọc file, không ghi vào DB |
-| `--remove` | Xóa truyện (và toàn bộ chương + nội dung) khỏi Supabase |
-| `--yes` | Bỏ qua xác nhận khi dùng `--remove` |
-| *(không có option)* | Import toàn bộ truyện |
+| Option | Bước | Mô tả |
+|--------|------|-------|
+| `--story-only` | 1 | Chỉ upsert tác giả, thể loại, truyện — không import chương |
+| `--from N` | 2 | Import từ chương N trở đi |
+| `--to N` | 2 | Import đến chương N (bao gồm) |
+| `--chapter N` | 2 | Chỉ import đúng chương N |
+| `--env path` | cả 2 | Đường dẫn file .env (mặc định: `../.env.local`) |
+| `--dry` | cả 2 | Chỉ đọc file, không ghi vào DB |
+| `--remove` | — | Xóa truyện (và toàn bộ chương + nội dung) khỏi Supabase |
+| `--yes` | — | Bỏ qua xác nhận khi dùng `--remove` |
 
 ### Ví dụ
 
 ```bash
-# Import toàn bộ
-node index.js tien-nghich
+# Bước 1: upsert metadata (chạy 1 lần)
+node index.js tien-nghich --story-only
 
-# Import chương 1 đến 100
-node index.js tien-nghich --from 1 --to 100
+# Bước 2: import song song 4 khoảng (mỗi terminal 1 lệnh)
+node index.js tien-nghich --from 1    --to 494
+node index.js tien-nghich --from 495  --to 988
+node index.js tien-nghich --from 989  --to 1482
+node index.js tien-nghich --from 1483 --to 1976
 
-# Tiếp tục từ chương 101
-node index.js tien-nghich --from 101 --to 200
-
-# Import đúng 1 chương
+# Bước 2: import đúng 1 chương
 node index.js tien-nghich --chapter 50
 
 # Thử trước (không ghi DB)
 node index.js tien-nghich --dry
-
-# Truyện khác
-node index.js huyen-giam-tien-toc --from 1 --to 500
 
 # Xóa truyện khỏi Supabase (có hỏi xác nhận)
 node index.js tien-nghich --remove
@@ -95,6 +104,7 @@ thien-dao/
 
 ## Ghi chú
 
+- **`--story-only`**: Upsert tác giả, thể loại, truyện rồi thoát ngay — dùng làm bước 1 trước khi chạy song song nhiều instance import chương.
 - **Upsert**: Chương đã có sẽ được cập nhật, không tạo trùng.
 - **Story mới**: Các field UI (`han`, `palette`, v.v.) được đặt giá trị mặc định; có thể chỉnh sau trong Supabase.
 - **Story đã có**: Chỉ cập nhật các field từ crawler, không ghi đè field UI đã chỉnh.

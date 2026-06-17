@@ -6,8 +6,8 @@ Các crawler thu thập nội dung truyện từ nhiều nguồn khác nhau.
 
 | Crawler | Nguồn | Hướng dẫn |
 |---------|-------|-----------|
-| metruyenchuvn-crawler | metruyenchuvn.com | [README](0-crawlers/metruyenchuvn-crawler/README.md) |
-| khotruyenchu-crawler | khotruyenchu.fun | [README](0-crawlers/khotruyenchu-crawler/README.md) |
+| metruyenchuvn-crawler | metruyenchuvn.com | [README](crawlers/metruyenchuvn-crawler/README.md) |
+| khotruyenchu-crawler | khotruyenchu.fun | [README](crawlers/khotruyenchu-crawler/README.md) |
 
 ## Cấu trúc output chung
 

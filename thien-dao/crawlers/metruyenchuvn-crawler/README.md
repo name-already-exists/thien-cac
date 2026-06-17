@@ -11,36 +11,44 @@ npm install
 
 ## Cách dùng
 
+Crawler chia làm 2 bước riêng biệt:
+
+**Bước 1 — Lấy cache URL chương:**
+```bash
+node index.js <url-truyện> --discover
+```
+
+**Bước 2 — Tải chương:**
 ```bash
 node index.js <url-truyện> [--from N] [--to N] [--chapter N]
 ```
 
 ### Options
 
-| Option | Mô tả |
-|--------|-------|
-| `--from N` | Tải từ chương N |
-| `--to N` | Tải đến chương N (bao gồm) |
-| `--chapter N` | Chỉ tải đúng chương N |
-| *(không có option)* | Tải toàn bộ truyện |
+| Option | Bước | Mô tả |
+|--------|------|-------|
+| `--discover` | 1 | Quét toàn bộ danh sách chương, lưu vào `.cache.json` |
+| `--from N` | 2 | Tải từ chương N |
+| `--to N` | 2 | Tải đến chương N (bao gồm) |
+| `--chapter N` | 2 | Chỉ tải đúng chương N |
 
 ### Ví dụ
 
 ```bash
-# Tải toàn bộ
+# Bước 1: lấy cache (chạy 1 lần, hoặc khi truyện ra chương mới)
+node index.js https://metruyenchuvn.com/tien-nghich --discover
+
+# Bước 2: tải toàn bộ
 node index.js https://metruyenchuvn.com/tien-nghich
 
-# Tải chương 1 đến 100
-node index.js https://metruyenchuvn.com/tien-nghich --from 1 --to 100
+# Bước 2: tải song song 4 khoảng (mỗi terminal 1 lệnh)
+node index.js https://metruyenchuvn.com/tien-nghich --from 1    --to 494
+node index.js https://metruyenchuvn.com/tien-nghich --from 495  --to 988
+node index.js https://metruyenchuvn.com/tien-nghich --from 989  --to 1482
+node index.js https://metruyenchuvn.com/tien-nghich --from 1483 --to 1976
 
-# Tiếp tục từ chương 101
-node index.js https://metruyenchuvn.com/tien-nghich --from 101 --to 200
-
-# Tải đúng 1 chương
+# Bước 2: tải đúng 1 chương
 node index.js https://metruyenchuvn.com/tien-nghich --chapter 50
-
-# Truyện khác
-node index.js https://metruyenchuvn.com/pham-nhan-tu-tien --from 1 --to 50
 ```
 
 ## Cấu trúc output
@@ -83,7 +91,7 @@ thien-dao/
 
 ## Ghi chú
 
-- **Cache**: File `.cache.json` lưu toàn bộ URL chương sau lần khám phá đầu. Các lần chạy sau dùng lại cache, không cần tải lại danh sách.
+- **Cache**: File `.cache.json` lưu toàn bộ URL chương sau khi chạy `--discover`. Bước 2 đọc cache trực tiếp, không gọi mạng để discovery. Chạy lại `--discover` sẽ cập nhật thêm chương mới mà không xóa entry cũ.
 - **Skip**: Chương đã tải sẽ bị bỏ qua, có thể chạy lại an toàn.
 - **Delay**: 1.2 giây giữa mỗi request để tránh bị block.
 - **Encoding**: File lưu UTF-8, đọc bằng editor hỗ trợ UTF-8.

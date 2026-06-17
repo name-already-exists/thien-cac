@@ -20,8 +20,8 @@ const HEADERS = {
   'Referer': BASE_URL,
 };
 
-// Output directory: two levels up → thien-dao/
-const OUTPUT_BASE = path.join(__dirname, '../..');
+// Output directory: thien-dao/storage/
+const OUTPUT_BASE = path.join(__dirname, '../../storage');
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
@@ -225,14 +225,15 @@ async function discoverAllChapters(storyId, storySlug, totalPages, known, cacheF
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const result = { url: null, from: null, to: null, chapter: null };
+  const result = { url: null, from: null, to: null, chapter: null, discover: false };
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--from' && args[i + 1]) result.from = parseInt(args[++i], 10);
-    else if (a === '--to' && args[i + 1]) result.to = parseInt(args[++i], 10);
-    else if (a === '--chapter' && args[i + 1]) result.chapter = parseInt(args[++i], 10);
-    else if (!a.startsWith('-')) result.url = a;
+    if      (a === '--from'    && args[i + 1]) result.from     = parseInt(args[++i], 10);
+    else if (a === '--to'      && args[i + 1]) result.to       = parseInt(args[++i], 10);
+    else if (a === '--chapter' && args[i + 1]) result.chapter  = parseInt(args[++i], 10);
+    else if (a === '--discover')               result.discover  = true;
+    else if (!a.startsWith('-'))               result.url       = a;
   }
 
   return result;
@@ -242,24 +243,27 @@ function printHelp() {
   console.log(`
 Crawler truyện từ metruyenchuvn.com
 ────────────────────────────────────────────────────
-Cách dùng:
+Bước 1 — lấy cache URL chương:
+  node index.js <story-url> --discover
+
+Bước 2 — tải chương (cần chạy --discover trước):
   node index.js <story-url> [options]
 
-Options:
+Options (bước 2):
   --from N      Tải từ chương N trở đi
   --to N        Tải đến chương N (bao gồm)
   --chapter N   Chỉ tải đúng chương N
 
 Ví dụ:
-  node index.js https://metruyenchuvn.com/tien-nghich
-  node index.js https://metruyenchuvn.com/tien-nghich --from 1 --to 100
-  node index.js https://metruyenchuvn.com/tien-nghich --from 101 --to 200
+  node index.js https://metruyenchuvn.com/tien-nghich --discover
+  node index.js https://metruyenchuvn.com/tien-nghich --from 1 --to 494
+  node index.js https://metruyenchuvn.com/tien-nghich --from 495 --to 988
   node index.js https://metruyenchuvn.com/tien-nghich --chapter 50
 
 Lưu ý:
-  - Dữ liệu lưu tại:  thien-dao/<slug>/
-  - Cache URL chương: thien-dao/<slug>/.cache.json
-  - Chạy lại → bỏ qua file và cache đã có
+  - Dữ liệu lưu tại:  thien-dao/storage/<slug>/
+  - Cache URL chương: thien-dao/storage/<slug>/.cache.json
+  - Chạy lại bước 2 → bỏ qua file đã tải
 `);
 }
 
@@ -286,31 +290,66 @@ async function main() {
   console.log(`Lưu tại : ${outputDir}`);
   console.log('─'.repeat(52));
 
-  // ── 1. Story metadata + story ID ──────────────────────────
-  const introFile = path.join(outputDir, '0_gioi_thieu.txt');
-  let storyInfo;
-  let storyId;
+  // ══════════════════════════════════════════════════════════
+  // BƯỚC 1: Discovery — lấy toàn bộ cache URL chương
+  // ══════════════════════════════════════════════════════════
+  if (args.discover) {
+    process.stdout.write('Đang tải trang truyện...');
+    const storyHtml = await fetchHtml(storyUrl);
+    if (!storyHtml) { console.error('\nKhông thể tải trang truyện.'); process.exit(1); }
 
-  process.stdout.write('Đang tải trang truyện...');
-  const storyHtml = await fetchHtml(storyUrl);
-  if (!storyHtml) { console.error('\nKhông thể tải trang truyện.'); process.exit(1); }
+    const storyId = extractStoryId(storyHtml);
+    if (!storyId) { console.error('\nKhông tìm được story ID trong trang.'); process.exit(1); }
 
-  storyId = extractStoryId(storyHtml);
-  if (!storyId) { console.error('\nKhông tìm được story ID trong trang.'); process.exit(1); }
+    const totalPages = extractTotalPages(storyHtml, storyId);
+    console.log(` OK (ID: ${storyId}, ${totalPages ?? '?'} trang)`);
 
-  const totalPages = extractTotalPages(storyHtml, storyId);
-  console.log(` OK (ID: ${storyId}, ${totalPages ?? '?'} trang)`);
+    const introFile = path.join(outputDir, '0_gioi_thieu.txt');
+    if (!fs.existsSync(introFile)) {
+      const storyInfo = parseStoryInfo(storyHtml, storyUrl);
+      fs.writeFileSync(introFile, JSON.stringify(storyInfo, null, 2), 'utf8');
+      console.log(`Thông tin: ${storyInfo.story_name} — ${storyInfo.total_num_chapters} chương, ${storyInfo.story_status}`);
+    } else {
+      const storyInfo = JSON.parse(fs.readFileSync(introFile, 'utf8'));
+      console.log(`Thông tin: ${storyInfo.story_name} (đã có)`);
+    }
 
-  if (!fs.existsSync(introFile)) {
-    storyInfo = parseStoryInfo(storyHtml, storyUrl);
-    fs.writeFileSync(introFile, JSON.stringify(storyInfo, null, 2), 'utf8');
-    console.log(`Thông tin: ${storyInfo.story_name} — ${storyInfo.total_num_chapters} chương, ${storyInfo.story_status}`);
-  } else {
-    storyInfo = JSON.parse(fs.readFileSync(introFile, 'utf8'));
-    console.log(`Thông tin: ${storyInfo.story_name} (đã có)`);
+    let known = loadCache(cacheFile);
+    if (totalPages) {
+      await sleep(DELAY_MS);
+      known = await discoverAllChapters(storyId, storySlug, totalPages, known, cacheFile);
+    } else {
+      console.log('   Chỉ có 1 trang danh sách chương, lấy từ trang truyện...');
+      const batch = parseChapterLinksFromHtml(storyHtml, storySlug);
+      Object.assign(known, batch);
+      saveCache(cacheFile, known);
+      console.log(`   Tìm thấy ${Object.keys(known).length} chương`);
+    }
+
+    console.log('\n' + '─'.repeat(52));
+    console.log(`Discovery xong: ${Object.keys(known).length} chương`);
+    console.log(`Cache: ${cacheFile}`);
+    return;
   }
 
-  // ── 2. Xác định khoảng chương cần tải ────────────────────
+  // ══════════════════════════════════════════════════════════
+  // BƯỚC 2: Download — tải chương từ cache có sẵn
+  // ══════════════════════════════════════════════════════════
+  const known = loadCache(cacheFile);
+  if (Object.keys(known).length === 0) {
+    console.error('Cache trống. Chạy bước 1 trước:\n  node index.js <url> --discover');
+    process.exit(1);
+  }
+  console.log(`Cache   : ${Object.keys(known).length} chương`);
+
+  const introFile = path.join(outputDir, '0_gioi_thieu.txt');
+  let storyInfo = {};
+  if (fs.existsSync(introFile)) {
+    storyInfo = JSON.parse(fs.readFileSync(introFile, 'utf8'));
+    console.log(`Thông tin: ${storyInfo.story_name}`);
+  }
+
+  // ── Xác định khoảng chương cần tải ───────────────────────
   let fromChapter = args.from ?? 1;
   let toChapter = args.to ?? Infinity;
   if (args.chapter !== null) { fromChapter = args.chapter; toChapter = args.chapter; }
@@ -320,37 +359,6 @@ async function main() {
   const rangeLabel = effectiveTo === Infinity ? `${fromChapter} → hết` : `${fromChapter} → ${effectiveTo}`;
   console.log(`Khoảng  : ${rangeLabel}`);
 
-  // ── 3. Khám phá URL chương qua AJAX ──────────────────────
-  let known = loadCache(cacheFile);
-
-  // Kiểm tra xem cache đã đủ chưa
-  const neededNums = effectiveTo !== Infinity
-    ? Array.from({ length: effectiveTo - fromChapter + 1 }, (_, i) => fromChapter + i).filter(n => !known[n])
-    : [];
-
-  const hasKnownInRange = effectiveTo === Infinity
-    ? Object.keys(known).some((n) => parseInt(n, 10) >= fromChapter)
-    : true;
-  const needsDiscovery = neededNums.length > 0 || !hasKnownInRange;
-
-  if (needsDiscovery) {
-    if (totalPages) {
-      await sleep(DELAY_MS);
-      known = await discoverAllChapters(storyId, storySlug, totalPages, known, cacheFile);
-    } else {
-      // totalPages không lấy được (truyện 1 trang, không có nút Cuối)
-      // Lấy từ trang truyện đã tải
-      console.log('   Chỉ có 1 trang danh sách chương, lấy từ trang truyện...');
-      const batch = parseChapterLinksFromHtml(storyHtml, storySlug);
-      Object.assign(known, batch);
-      saveCache(cacheFile, known);
-      console.log(`   Tìm thấy ${Object.keys(known).length} chương`);
-    }
-  } else {
-    console.log(`Cache   : ${Object.keys(known).length} chương (dùng lại)`);
-  }
-
-  // ── 4. Danh sách chương cần download ─────────────────────
   const errorFile = path.join(outputDir, '.cache-error.json');
   const errorCache = loadCache(errorFile); // { site_gaps: [], download_failed: [] }
   // site_gaps: chương site không có (đã quét hết nhưng không tìm thấy)
@@ -378,7 +386,6 @@ async function main() {
 
   console.log(`\nBắt đầu tải ${downloadList.length} chương...\n`);
 
-  // ── 5. Download ───────────────────────────────────────────
   let success = 0, skipped = 0, failed = 0;
   const downloadFailed = new Set(errorCache.download_failed || []);
   // Xóa khỏi site_gaps nếu chapter đã được cache sau lần discovery mới
@@ -424,7 +431,6 @@ async function main() {
     success++;
   }
 
-  // ── 6. Ghi file lỗi ──────────────────────────────────────
   const gapsArr = [...siteGaps].sort((a, b) => a - b);
   const failedArr = [...downloadFailed].sort((a, b) => a - b);
 
