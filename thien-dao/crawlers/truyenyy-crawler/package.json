@@ -1,0 +1,13 @@
+{
+  "name": "truyenyy-crawler",
+  "version": "1.0.0",
+  "description": "Crawler thu thập dữ liệu truyện từ truyenyy.co",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "cheerio": "1.0.0"
+  }
+}

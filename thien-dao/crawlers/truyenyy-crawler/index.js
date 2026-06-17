@@ -8,7 +8,7 @@ const path = require('path');
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const BASE_URL = 'https://khotruyenchu.fun';
+const BASE_URL = 'https://truyenyy.co';
 const DELAY_MS = 1200;
 const RETRY_COUNT = 3;
 const RETRY_DELAY_MS = 3000;
@@ -20,7 +20,6 @@ const HEADERS = {
   'Referer': BASE_URL,
 };
 
-// Output directory: two levels up → thien-dao/
 const OUTPUT_BASE = path.join(__dirname, '../../storage');
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
@@ -66,7 +65,7 @@ function saveCache(cacheFile, data) {
 function extractStorySlug(url) {
   try {
     const u = new URL(url.startsWith('http') ? url : `https://${url}`);
-    const m = u.pathname.match(/\/truyen\/([^/]+)\/?/);
+    const m = u.pathname.match(/\/truyen\/([^/?#]+)/);
     return m ? m[1] : null;
   } catch {
     return null;
@@ -76,34 +75,46 @@ function extractStorySlug(url) {
 function parseStoryInfo(html, storyUrl) {
   const $ = cheerio.load(html);
 
-  const title = $('.truyen-title').first().text().trim();
-  const author = $('.truyen-meta a[href*="tac-gia"]').first().text().trim();
+  // Title: dùng h1
+  const title = $('h1').first().text().trim();
 
-  const genre = $('.truyen-meta a[href*="the-loai"]')
-    .map((_, el) => $(el).text().trim())
-    .get()
-    .filter(Boolean)
-    .join(', ');
+  // Author: từ Next.js JSON data trong script tags
+  let author = '';
+  const authorM = html.match(/"name":"([^"]{1,80})","slugId":/);
+  if (authorM) author = authorM[1];
 
-  let status = '';
-  $('.truyen-meta span').each((_, el) => {
-    const text = $(el).text();
-    if (text.includes('Tình trạng')) {
-      status = text.replace(/.*Tình trạng\s*:?\s*/i, '').trim();
+  // Meta: dùng regex trên raw HTML vì cấu trúc span lồng nhau phức tạp
+  // VD: <span>Số chương</span><span class="...">1331</span>
+  const chapM = html.match(/Số chương<\/span><span[^>]*>(\d+)/);
+  const totalChapters = chapM ? chapM[1] : '';
+
+  const statusM = html.match(/Trạng thái<\/span><span[^>]*>([^<]+)<\/span>/);
+  const status = statusM ? statusM[1].trim() : '';
+
+  // Genre: VD <span>Thể loại</span><span class="...">Tiên hiệp , Huyền huyễn,...</span>
+  const genreM = html.match(/Thể loại<\/span><span[^>]*>([^<]+)<\/span>/);
+  const genre = genreM ? genreM[1].trim() : '';
+
+  // Description: tìm div prose hoặc fallback regex
+  let description = '';
+  $('[class]').each((_, el) => {
+    const cls = $(el).attr('class') || '';
+    if (cls.includes('whitespace-break-spaces') && cls.includes('prose') && !cls.includes('line-clamp')) {
+      description = $(el).text().trim();
       return false;
     }
   });
-
-  let totalChapters = '';
-  $('.truyen-meta span').each((_, el) => {
-    const text = $(el).text();
-    if (text.match(/Số chương|Tổng chương/i)) {
-      totalChapters = text.replace(/.*:\s*/i, '').trim();
-      return false;
+  if (!description) {
+    // Fallback: lấy từ Next.js script chunk có nội dung dài
+    const chunks = html.match(/self\.__next_f\.push\(\[1,"([^"]{200,})"\]\)/g) || [];
+    for (const chunk of chunks) {
+      const raw = chunk.replace(/^self\.__next_f\.push\(\[1,"/, '').replace(/"\]\)$/, '');
+      if (raw.includes('\\n\\n') && !raw.includes('className')) {
+        description = raw.replace(/\\n/g, '\n').replace(/\\"/g, '"').trim();
+        break;
+      }
     }
-  });
-
-  const description = $('.truyen-desc').text().trim();
+  }
 
   return {
     story_name: title,
@@ -116,30 +127,24 @@ function parseStoryInfo(html, storyUrl) {
   };
 }
 
-// Lấy tổng số trang từ pagination trên trang truyện
+// Lấy tổng số trang từ Next.js hydration data trong HTML
+// HTML embeds escaped JSON: \"totalPages\":N
 function extractTotalPages(html) {
-  const $ = cheerio.load(html);
-  let maxPage = 1;
-  // Tìm max trong tất cả .page-numbers (bỏ qua nút Prev/Next dạng text)
-  $('.ct-pagination .page-numbers, .pagination .page-numbers').each((_, el) => {
-    const n = parseInt($(el).text().trim(), 10);
-    if (!isNaN(n) && n > maxPage) maxPage = n;
-  });
-  return maxPage;
+  const m = html.match(/\\"totalPages\\":(\d+)/) || html.match(/"totalPages":(\d+)/);
+  return m ? parseInt(m[1], 10) : 1;
 }
 
 // ─── Chapter list page parser ─────────────────────────────────────────────────
 
-// URL chương: /chuong-{number}-{slug}/
-const CHAPTER_URL_RE = /\/chuong-(\d+)-[^/]+\/?/;
-
-function parseChapterLinksFromHtml(html) {
+// URL chương: /truyen/{slug}/chuong-{number}-{title-slug}
+function parseChapterLinksFromHtml(html, storySlug) {
   const $ = cheerio.load(html);
   const chapters = {};
+  const pattern = new RegExp(`/truyen/${storySlug}/chuong-(\\d+)-[^/?#"'\\s]+`);
 
   $('a[href]').each((_, el) => {
     const href = $(el).attr('href') || '';
-    const m = href.match(CHAPTER_URL_RE);
+    const m = href.match(pattern);
     if (m) {
       const num = parseInt(m[1], 10);
       if (!chapters[num]) {
@@ -153,28 +158,42 @@ function parseChapterLinksFromHtml(html) {
 
 // ─── Chapter discovery ────────────────────────────────────────────────────────
 
-async function discoverAllChapters(storySlug, totalPages, known, cacheFile) {
-  console.log(`   Tổng ${totalPages} trang danh sách chương, đang tải...`);
+async function discoverAllChapters(storySlug, known, cacheFile) {
+  const listBaseUrl = `${BASE_URL}/truyen/${storySlug}/danh-sach-chuong`;
+
+  process.stdout.write('   Đang tải trang 1 để lấy tổng số trang...');
+  const firstHtml = await fetchHtml(listBaseUrl);
+  if (!firstHtml) {
+    process.stdout.write(' THẤT BẠI\n');
+    return known;
+  }
+
+  const totalPages = extractTotalPages(firstHtml);
+  console.log(` OK (${totalPages} trang)`);
+
   let found = 0;
 
-  for (let page = 1; page <= totalPages; page++) {
+  // Page 1
+  const batch1 = parseChapterLinksFromHtml(firstHtml, storySlug);
+  for (const [num, url] of Object.entries(batch1)) {
+    if (!known[num]) { known[num] = url; found++; }
+  }
+
+  // Pages 2..totalPages
+  for (let page = 2; page <= totalPages; page++) {
     process.stdout.write(`\r   Trang ${page}/${totalPages}...`);
     await sleep(DELAY_MS);
 
-    const url = page === 1
-      ? `${BASE_URL}/truyen/${storySlug}/`
-      : `${BASE_URL}/truyen/${storySlug}/page/${page}/`;
-
+    const url = `${listBaseUrl}?p=${page}`;
     const html = await fetchHtml(url);
     if (!html) {
       process.stdout.write(` [Bỏ qua trang ${page}]\n`);
       continue;
     }
 
-    const batch = parseChapterLinksFromHtml(html);
+    const batch = parseChapterLinksFromHtml(html, storySlug);
     for (const [num, url] of Object.entries(batch)) {
-      const needsUpdate = !known[num] || !known[num].startsWith(BASE_URL);
-      if (needsUpdate) { known[num] = url; found++; }
+      if (!known[num]) { known[num] = url; found++; }
     }
   }
 
@@ -189,26 +208,37 @@ async function discoverAllChapters(storySlug, totalPages, known, cacheFile) {
 function parseChapter(html) {
   const $ = cheerio.load(html);
 
-  const rawTitle = $('h1.page-title').text().trim() || $('h1').first().text().trim();
-  const m = rawTitle.match(/Chương\s+(\d+)\s*[:\-–]\s*(.*)/i);
-  const chapterNumber = m ? `Chương ${m[1]}` : rawTitle;
-  const chapterName = m ? m[2].trim() : '';
+  // Chapter number: tìm div/span chứa "Chương N :"
+  let chapterNumber = '';
+  $('div, span').each((_, el) => {
+    const text = $(el).text().trim();
+    const m = text.match(/^(Chương\s+\d+)\s*:/i);
+    if (m) {
+      chapterNumber = m[1];
+      return false;
+    }
+  });
 
-  // Lấy <p> trực tiếp bên trong .entry-content, bỏ qua nội dung bên trong .story-navigation và .reading-tools-bar
-  const entryContent = $('.entry-content');
-  entryContent.find('.story-navigation, .reading-tools-bar').remove();
-  // Trang nguồn dùng <br> đơn để ngăn đoạn trong cùng 1 <p> → quy đổi thành '\n' trước khi lấy text.
-  entryContent.find('br').replaceWith('\n');
+  // Chapter name: từ thẻ h1
+  const chapterName = $('h1').first().text().trim();
 
-  const pTags = entryContent.find('p');
-  const lines = pTags.length ? pTags.map((_, el) => $(el).text()).get() : [entryContent.text()];
+  // Content: các thẻ <p> không có class, bỏ qua điều hướng và thông báo VIP
+  const paragraphs = [];
+  $('p').each((_, el) => {
+    // Bỏ qua p có class (navigation, header, word-count...)
+    if ($(el).attr('class')) return;
 
-  // Mỗi dòng (do <br> hoặc do ranh giới <p> tạo ra) đều coi là một đoạn riêng, ngăn bằng '\n\n'.
-  const content = lines
-    .flatMap((t) => t.split('\n'))
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .join('\n\n');
+    const text = $(el).text().trim();
+
+    // Bỏ qua nút điều hướng và thông báo VIP
+    if (text === 'Trước' || text === 'Tiếp') return;
+    if (text.includes('Đọc chương VIP') || text.includes('ứng dụng dành riêng')) return;
+
+    if (text) paragraphs.push(text);
+  });
+
+  // Mỗi đoạn text ngăn bằng '\n\n'
+  const content = paragraphs.join('\n\n');
 
   return { chapterNumber, chapterName, content };
 }
@@ -233,7 +263,7 @@ function parseArgs() {
 
 function printHelp() {
   console.log(`
-Crawler truyện từ khotruyenchu.fun
+Crawler truyện từ truyenyy.co
 ────────────────────────────────────────────────────
 Bước 1 — lấy cache URL chương:
   node index.js <story-url> --discover
@@ -247,14 +277,14 @@ Options (bước 2):
   --chapter N   Chỉ tải đúng chương N
 
 Ví dụ:
-  node index.js https://khotruyenchu.fun/truyen/tien-nghich/ --discover
-  node index.js https://khotruyenchu.fun/truyen/tien-nghich/ --from 1 --to 100
-  node index.js https://khotruyenchu.fun/truyen/tien-nghich/ --from 101 --to 200
-  node index.js https://khotruyenchu.fun/truyen/tien-nghich/ --chapter 50
+  node index.js https://truyenyy.co/truyen/kiem-lai --discover
+  node index.js https://truyenyy.co/truyen/kiem-lai --from 1 --to 300
+  node index.js https://truyenyy.co/truyen/kiem-lai --from 301 --to 600
+  node index.js https://truyenyy.co/truyen/kiem-lai --chapter 50
 
 Lưu ý:
-  - Dữ liệu lưu tại:  thien-dao/<slug>/
-  - Cache URL chương: thien-dao/<slug>/.cache.json
+  - Dữ liệu lưu tại:  thien-dao/storage/<slug>/
+  - Cache URL chương: thien-dao/storage/<slug>/.cache.json
   - Chạy lại bước 2 → bỏ qua file đã tải
 `);
 }
@@ -268,11 +298,11 @@ async function main() {
 
   const storySlug = extractStorySlug(args.url);
   if (!storySlug) {
-    console.error('URL không hợp lệ. Ví dụ: https://khotruyenchu.fun/truyen/tien-nghich/');
+    console.error('URL không hợp lệ. Ví dụ: https://truyenyy.co/truyen/kiem-lai');
     process.exit(1);
   }
 
-  const storyUrl = `${BASE_URL}/truyen/${storySlug}/`;
+  const storyUrl = `${BASE_URL}/truyen/${storySlug}`;
   const outputDir = path.join(OUTPUT_BASE, storySlug);
   const cacheFile = path.join(outputDir, '.cache.json');
 
@@ -282,33 +312,28 @@ async function main() {
   console.log(`Lưu tại : ${outputDir}`);
   console.log('─'.repeat(52));
 
-  // ── 1. Story metadata ─────────────────────────────────────
-  const introFile = path.join(outputDir, '0_gioi_thieu.txt');
-  let storyInfo;
-
-  process.stdout.write('Đang tải trang truyện...');
-  const storyHtml = await fetchHtml(storyUrl);
-  if (!storyHtml) { console.error('\nKhông thể tải trang truyện.'); process.exit(1); }
-
-  const totalPages = extractTotalPages(storyHtml);
-  console.log(` OK (${totalPages} trang)`);
-
-  if (!fs.existsSync(introFile)) {
-    storyInfo = parseStoryInfo(storyHtml, storyUrl);
-    fs.writeFileSync(introFile, JSON.stringify(storyInfo, null, 2), 'utf8');
-    console.log(`Thông tin: ${storyInfo.story_name} — ${storyInfo.story_status}`);
-  } else {
-    storyInfo = JSON.parse(fs.readFileSync(introFile, 'utf8'));
-    console.log(`Thông tin: ${storyInfo.story_name} (đã có)`);
-  }
-
   // ══════════════════════════════════════════════════════════
   // BƯỚC 1: Discovery — lấy toàn bộ cache URL chương
   // ══════════════════════════════════════════════════════════
   if (args.discover) {
+    process.stdout.write('Đang tải trang truyện...');
+    const storyHtml = await fetchHtml(storyUrl);
+    if (!storyHtml) { console.error('\nKhông thể tải trang truyện.'); process.exit(1); }
+    console.log(' OK');
+
+    const introFile = path.join(outputDir, '0_gioi_thieu.txt');
+    if (!fs.existsSync(introFile)) {
+      const storyInfo = parseStoryInfo(storyHtml, storyUrl);
+      fs.writeFileSync(introFile, JSON.stringify(storyInfo, null, 2), 'utf8');
+      console.log(`Thông tin: ${storyInfo.story_name} — ${storyInfo.total_num_chapters} chương, ${storyInfo.story_status}`);
+    } else {
+      const storyInfo = JSON.parse(fs.readFileSync(introFile, 'utf8'));
+      console.log(`Thông tin: ${storyInfo.story_name} (đã có)`);
+    }
+
     await sleep(DELAY_MS);
     let known = loadCache(cacheFile);
-    known = await discoverAllChapters(storySlug, totalPages, known, cacheFile);
+    known = await discoverAllChapters(storySlug, known, cacheFile);
 
     console.log('\n' + '─'.repeat(52));
     console.log(`Discovery xong: ${Object.keys(known).length} chương`);
@@ -316,42 +341,41 @@ async function main() {
     return;
   }
 
-  // ── 2. Xác định khoảng chương cần tải ────────────────────
+  // ══════════════════════════════════════════════════════════
+  // BƯỚC 2: Download — tải chương từ cache có sẵn
+  // ══════════════════════════════════════════════════════════
+  const known = loadCache(cacheFile);
+  if (Object.keys(known).length === 0) {
+    console.error('Cache trống. Chạy bước 1 trước:\n  node index.js <url> --discover');
+    process.exit(1);
+  }
+  console.log(`Cache   : ${Object.keys(known).length} chương`);
+
+  const introFile = path.join(outputDir, '0_gioi_thieu.txt');
+  let storyInfo = {};
+  if (fs.existsSync(introFile)) {
+    storyInfo = JSON.parse(fs.readFileSync(introFile, 'utf8'));
+    console.log(`Thông tin: ${storyInfo.story_name}`);
+  }
+
+  // ── Xác định khoảng chương cần tải ───────────────────────
   let fromChapter = args.from ?? 1;
   let toChapter = args.to ?? Infinity;
   if (args.chapter !== null) { fromChapter = args.chapter; toChapter = args.chapter; }
 
-  const rangeLabel = toChapter === Infinity ? `${fromChapter} → hết` : `${fromChapter} → ${toChapter}`;
+  const totalKnown = parseInt(storyInfo.total_num_chapters, 10) || null;
+  const effectiveTo = toChapter === Infinity && totalKnown ? totalKnown : toChapter;
+  const rangeLabel = effectiveTo === Infinity ? `${fromChapter} → hết` : `${fromChapter} → ${effectiveTo}`;
   console.log(`Khoảng  : ${rangeLabel}`);
 
-  // ── 3. Khám phá URL chương ────────────────────────────────
-  let known = loadCache(cacheFile);
-
-  const neededNums = toChapter !== Infinity
-    ? Array.from({ length: toChapter - fromChapter + 1 }, (_, i) => fromChapter + i).filter((n) => !known[n])
-    : [];
-
-  const hasKnownInRange = toChapter === Infinity
-    ? Object.keys(known).some((n) => parseInt(n, 10) >= fromChapter)
-    : true;
-  const needsDiscovery = neededNums.length > 0 || !hasKnownInRange;
-
-  if (needsDiscovery) {
-    await sleep(DELAY_MS);
-    known = await discoverAllChapters(storySlug, totalPages, known, cacheFile);
-  } else {
-    console.log(`Cache   : ${Object.keys(known).length} chương (dùng lại)`);
-  }
-
-  // ── 4. Danh sách chương cần download ─────────────────────
   const errorFile = path.join(outputDir, '.cache-error.json');
   const errorCache = loadCache(errorFile);
   const siteGaps = new Set(errorCache.site_gaps || []);
 
   let downloadList;
-  if (toChapter !== Infinity) {
+  if (effectiveTo !== Infinity) {
     downloadList = [];
-    for (let n = fromChapter; n <= toChapter; n++) {
+    for (let n = fromChapter; n <= effectiveTo; n++) {
       if (known[n]) {
         downloadList.push(n);
       } else {
@@ -370,7 +394,6 @@ async function main() {
 
   console.log(`\nBắt đầu tải ${downloadList.length} chương...\n`);
 
-  // ── 5. Download ───────────────────────────────────────────
   let success = 0, skipped = 0, failed = 0;
   const downloadFailed = new Set(errorCache.download_failed || []);
   for (const n of [...siteGaps]) { if (known[n]) siteGaps.delete(n); }
@@ -415,7 +438,6 @@ async function main() {
     success++;
   }
 
-  // ── 6. Ghi file lỗi ──────────────────────────────────────
   const gapsArr = [...siteGaps].sort((a, b) => a - b);
   const failedArr = [...downloadFailed].sort((a, b) => a - b);
 

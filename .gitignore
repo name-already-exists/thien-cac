@@ -40,7 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+/ngoc-gian/node_modules
+
+/thien-dao/storage
+
 /thien-dao/crawlers/metruyenchuvn-crawler/node_modules
 /thien-dao/crawlers/khotruyenchu-crawler/node_modules
-/thien-dao/storage
-/ngoc-gian/node_modules
+/thien-dao/crawlers/truyenyy-crawler/node_modules
