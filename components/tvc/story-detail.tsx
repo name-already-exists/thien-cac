@@ -231,7 +231,6 @@ export function StoryDetail({ story, onRead }: Props) {
   const [recommended, setRecommended] = useState<Story[]>([]);
 
   useEffect(() => {
-    setLoadingChapters(true);
     fetchChapters(story.dbId).then((data) => {
       setChapters(data);
       setLoadingChapters(false);

@@ -35,10 +35,7 @@ export function Header({ screen, onNav, query, setQuery, onSearchPick }: Props) 
   const [dropdownPos, setDropdownPos]     = useState<DropdownPos | null>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
   const [username, setUsername] = useState("Đạo hữu");
-
-  useEffect(() => {
-    setUsername(getUsername());
-  }, []);
+  useEffect(() => { Promise.resolve(getUsername()).then(setUsername); }, []);
 
   const navClick = (target: { screen: Screen }) => {
     onNav(target);

@@ -113,6 +113,26 @@ export function Reader({ story, chapterNumber, initialChapterData, onBack, onDet
         <h2 className="chapter-title">
           {loading ? "Đang tải…" : (chapterData?.title ?? "—")}
         </h2>
+
+        <div className="tvc-reader-nav">
+          <button
+            className="tvc-btn tvc-btn-secondary"
+            disabled={!hasPrev}
+            onClick={() => setCurrentChapter(currentChapter - 1)}
+          >
+            <Icon name="chevronLeft" size={16} /> Chương trước
+          </button>
+          <button className="tvc-btn tvc-btn-ghost" onClick={() => onDetail(story)}>
+            <Icon name="library" size={16} /> Mục lục
+          </button>
+          <button
+            className="tvc-btn tvc-btn-primary"
+            disabled={!hasNext}
+            onClick={() => setCurrentChapter(currentChapter + 1)}
+          >
+            Chương sau <Icon name="chevronRight" size={16} />
+          </button>
+        </div>
         <OrnDivider />
 
         <div

@@ -658,7 +658,7 @@
 .tvc-reader-content .chapter-num { text-align: center; font-size: 13px; color: var(--fg-3); letter-spacing: .12em; text-transform: uppercase; }
 .tvc-reader-content .text { font-family: var(--font-reader); font-size: 18px; line-height: 1.85; color: var(--fg-1); margin-top: 48px; }
 .tvc-reader-content .text p { margin: 0 0 24px; text-indent: 2em; }
-.tvc-reader-nav { display: flex; gap: 12px; justify-content: center; margin-top: 56px; }
+.tvc-reader-nav { display: flex; gap: 12px; justify-content: space-between; margin: 24px 0; }
 
 .tvc-reader-chrome {
   position: fixed; top: 50%; right: 24px; transform: translateY(-50%);
