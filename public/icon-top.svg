@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <rect x="3" y="3" width="74" height="74" rx="5" fill="#00A86B"/>
+  <rect x="8" y="8" width="64" height="64" rx="2" fill="none" stroke="#FBF7EE" stroke-width="1.5" opacity="0.7"/>
+  <text x="40" y="58" font-family="Noto Serif SC, serif" font-weight="700" font-size="46" fill="#FBF7EE" text-anchor="middle">顶</text>
+</svg>

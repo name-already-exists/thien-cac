@@ -92,7 +92,7 @@ export function ScrollToTop() {
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Lên đầu trang"
     >
-      <Icon name="sword" size={22} style={{ color: "#00A86B" }} />
+      <img src="/icon-top.svg" width={48} height={48} alt="" />
     </button>
   );
 }

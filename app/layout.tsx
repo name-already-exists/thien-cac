@@ -37,6 +37,8 @@ export const metadata: Metadata = {
   description: "Nơi vạn quyển hội tụ — Đọc truyện tiên hiệp, kiếm hiệp, huyền ảo.",
   icons: {
     icon: "/seal.svg",
+    apple: "/seal.svg",
+    shortcut: "/seal.svg",
   },
 };
 
