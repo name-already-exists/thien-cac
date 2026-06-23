@@ -607,7 +607,7 @@
 .tvc-detail-desc { font-family: var(--font-reader); font-size: 15px; line-height: 1.7; color: var(--fg-1); white-space: pre-line; }
 .tvc-detail-desc--clamped { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .tvc-desc-toggle { margin-top: 8px; background: none; border: none; padding: 0; font-size: 13px; color: var(--brand-primary); cursor: pointer; font-family: var(--font-sans); }
-.tvc-scroll-top { display: none; position: fixed; bottom: 24px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: none; border: 2px solid rgba(0, 168, 107, 0.75); cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,168,107,0.15); z-index: 300; backdrop-filter: invert(1); }
+.tvc-scroll-top { display: none; position: fixed; bottom: 30%; right: 16px; width: 48px; height: 48px; border-radius: 50%; background: none; border: 2px solid rgba(0, 168, 107, 0.75); cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,168,107,0.15); z-index: 300; backdrop-filter: invert(1); }
 @media (max-width: 768px) { .tvc-scroll-top { display: flex; } }
 .tvc-chapter-list { background: var(--bg-card); border-radius: 12px; padding: 8px; box-shadow: var(--shadow-sm); max-height: 480px; overflow-y: auto; }
 .tvc-chapter-list.two-col { display: grid; grid-template-columns: repeat(2, 1fr); max-height: none; overflow-y: visible; }
