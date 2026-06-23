@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 type IconName =
   | "search" | "library" | "trophy" | "bookmark" | "bookmarkCheck"
   | "history" | "settings" | "user" | "chevronRight" | "chevronLeft"
-  | "chevronDown" | "star" | "book" | "bookOpen" | "type" | "sunMoon"
+  | "chevronDown" | "chevronUp" | "star" | "book" | "bookOpen" | "type" | "sunMoon"
   | "alignJustify" | "arrowRight" | "arrowLeft" | "flame" | "sparkles"
   | "moreHorizontal" | "x" | "plus" | "minus" | "heart" | "eye"
-  | "messageCircle" | "chevronsLeft" | "chevronsRight";
+  | "messageCircle" | "chevronsLeft" | "chevronsRight" | "sword";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,
@@ -39,6 +39,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
   messageCircle: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>,
   chevronsLeft: <><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></>,
   chevronsRight: <><path d="m13 17 5-5-5-5"/><path d="m6 17 5-5-5-5"/></>,
+  chevronUp: <path d="m18 15-6-6-6 6"/>,
+  sword: <>
+    <path d="M10.5 13 L12 2 L13.5 13 L13.5 14.5 L10.5 14.5 Z"/>
+    <path d="M6.5 14.5 L17.5 14.5"/>
+    <path d="M12 14.5 L12 20.5"/>
+    <circle cx="12" cy="22" r="1.5"/>
+  </>,
 };
 
 type Props = {
@@ -64,5 +71,28 @@ export function Icon({ name, size = 16, className = "", style }: Props) {
     >
       {PATHS[name]}
     </svg>
+  );
+}
+
+export function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 320);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <button
+      className="tvc-scroll-top"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Lên đầu trang"
+    >
+      <Icon name="sword" size={22} style={{ color: "#00A86B" }} />
+    </button>
   );
 }

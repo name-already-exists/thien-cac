@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { Story, Chapter } from "@/lib/data";
 import { fetchChapters, fetchRecommendedStories } from "@/lib/db";
 import { StoryCover } from "./story-cover";
-import { Icon } from "./icons";
+import { Icon, ScrollToTop } from "./icons";
 
 const CHAPTERS_PER_PAGE = 50;
 
@@ -229,6 +229,9 @@ export function StoryDetail({ story, onRead }: Props) {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loadingChapters, setLoadingChapters] = useState(true);
   const [recommended, setRecommended] = useState<Story[]>([]);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [descOverflows, setDescOverflows] = useState(false);
+  const descRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchChapters(story.dbId).then((data) => {
@@ -237,6 +240,13 @@ export function StoryDetail({ story, onRead }: Props) {
     });
     fetchRecommendedStories(story.dbId).then(setRecommended);
   }, [story.dbId]);
+
+  useEffect(() => {
+    setDescExpanded(false);
+    if (descRef.current) {
+      setDescOverflows(descRef.current.scrollHeight > descRef.current.clientHeight + 2);
+    }
+  }, [story.desc]);
 
   const [c1, c2] = story.palette;
 
@@ -309,7 +319,17 @@ export function StoryDetail({ story, onRead }: Props) {
               簡介
             </span>
           </h3>
-          <div className="tvc-detail-desc">{story.desc}</div>
+          <div
+            ref={descRef}
+            className={`tvc-detail-desc${descExpanded ? "" : " tvc-detail-desc--clamped"}`}
+          >
+            {story.desc}
+          </div>
+          {(descOverflows || descExpanded) && (
+            <button className="tvc-desc-toggle" onClick={() => setDescExpanded((v) => !v)}>
+              {descExpanded ? "Thu gọn ↑" : "Xem thêm ↓"}
+            </button>
+          )}
 
           <ChapterListFull
             chapters={chapters}
@@ -372,6 +392,7 @@ export function StoryDetail({ story, onRead }: Props) {
           </div>
         </aside>
       </div>
+      <ScrollToTop />
     </div>
   );
 }

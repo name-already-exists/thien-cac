@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { Story } from "@/lib/data";
 import { fetchChapterContent } from "@/lib/db";
-import { Icon } from "./icons";
+import { Icon, ScrollToTop } from "./icons";
 
 type Props = {
   story: Story;
@@ -186,6 +186,8 @@ export function Reader({ story, chapterNumber, initialChapterData, onBack, onDet
           </button>
         </div>
       </div>
+
+      <ScrollToTop />
 
       {/* Reader settings panel */}
       {chromeOpen && (
