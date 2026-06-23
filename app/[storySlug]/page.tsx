@@ -14,7 +14,6 @@ export default function StoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     fetchStoryBySlug(storySlug).then((s) => {
       setStory(s);
       setLoading(false);

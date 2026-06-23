@@ -8,9 +8,9 @@ import { Icon } from "./icons";
 type Props = {
   story: Story;
   chapterNumber: number;
+  initialChapterData?: { title: string; content: string } | null;
   onBack: () => void;
   onDetail: (s: Story) => void;
-  onChapterNav?: (num: number) => void;
   onChapterLoad?: (num: number, title: string) => void;
 };
 
@@ -44,13 +44,18 @@ function OrnDivider({ color }: { color?: string }) {
   );
 }
 
-export function Reader({ story, chapterNumber, onBack, onDetail, onChapterNav, onChapterLoad }: Props) {
+export function Reader({ story, chapterNumber, initialChapterData, onBack, onDetail, onChapterLoad }: Props) {
   const [currentChapter, setCurrentChapter] = useState(chapterNumber);
-  const [chapterData, setChapterData] = useState<{
+
+  // Cache keyed by chapter number so StrictMode's double-invoke sees existing data and skips re-fetch
+  const [chapterCache, setChapterCache] = useState<{
+    num: number;
     title: string;
     content: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  } | null>(initialChapterData ? { num: chapterNumber, ...initialChapterData } : null);
+
+  const chapterData = chapterCache?.num === currentChapter ? chapterCache : null;
+  const loading = chapterCache?.num !== currentChapter;
 
   const [chromeOpen, setChromeOpen]   = useState(false);
   const [fontSize, setFontSize]       = useState(18);
@@ -59,19 +64,22 @@ export function Reader({ story, chapterNumber, onBack, onDetail, onChapterNav, o
   const [lineHeight, setLineHeight]   = useState<LineHeight>("normal");
 
   useEffect(() => {
-    setLoading(true);
-    setChapterData(null);
+    if (chapterCache?.num === currentChapter) {
+      if (chapterCache) onChapterLoad?.(currentChapter, chapterCache.title);
+      return;
+    }
+    let cancelled = false;
     fetchChapterContent(story.dbId, currentChapter).then((data) => {
-      setChapterData(data ? { title: data.title, content: data.content } : null);
-      setLoading(false);
+      if (cancelled) return;
+      setChapterCache({
+        num: currentChapter,
+        title: data?.title ?? '',
+        content: data?.content ?? '',
+      });
       if (data) onChapterLoad?.(currentChapter, data.title);
     });
-  }, [story.dbId, currentChapter]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sync với prop khi parent thay đổi chương (e.g. navigate từ chapter list)
-  useEffect(() => {
-    setCurrentChapter(chapterNumber);
-  }, [chapterNumber]);
+    return () => { cancelled = true; };
+  }, [story.dbId, currentChapter, chapterCache?.num]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { bg, fg } = THEME_MAP[theme];
   const readerTopBg = theme === "night" ? "rgba(26,26,26,0.92)" : "rgba(245,239,227,0.92)";
@@ -142,11 +150,7 @@ export function Reader({ story, chapterNumber, onBack, onDetail, onChapterNav, o
           <button
             className="tvc-btn tvc-btn-secondary"
             disabled={!hasPrev}
-            onClick={() => {
-              const n = currentChapter - 1;
-              setCurrentChapter(n);
-              onChapterNav?.(n);
-            }}
+            onClick={() => setCurrentChapter(currentChapter - 1)}
           >
             <Icon name="chevronLeft" size={16} /> Chương trước
           </button>
@@ -156,11 +160,7 @@ export function Reader({ story, chapterNumber, onBack, onDetail, onChapterNav, o
           <button
             className="tvc-btn tvc-btn-primary"
             disabled={!hasNext}
-            onClick={() => {
-              const n = currentChapter + 1;
-              setCurrentChapter(n);
-              onChapterNav?.(n);
-            }}
+            onClick={() => setCurrentChapter(currentChapter + 1)}
           >
             Chương sau <Icon name="chevronRight" size={16} />
           </button>
