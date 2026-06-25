@@ -139,12 +139,21 @@ function parseChapterLinksFromHtml(html) {
 
   $('a[href]').each((_, el) => {
     const href = $(el).attr('href') || '';
-    const m = href.match(CHAPTER_URL_RE);
-    if (m) {
-      const num = parseInt(m[1], 10);
-      if (!chapters[num]) {
-        chapters[num] = href.startsWith('http') ? href : `${BASE_URL}${href}`;
-      }
+    const url = href.startsWith('http') ? href : `${BASE_URL}${href}`;
+
+    // Ưu tiên số chương từ text của thẻ a
+    const textMatch = $(el).text().trim().match(/Chương\s+(\d+)/i);
+    if (textMatch) {
+      const num = parseInt(textMatch[1], 10);
+      if (!chapters[num]) chapters[num] = url;
+      return;
+    }
+
+    // Fallback: lấy số từ URL
+    const urlMatch = href.match(CHAPTER_URL_RE);
+    if (urlMatch) {
+      const num = parseInt(urlMatch[1], 10);
+      if (!chapters[num]) chapters[num] = url;
     }
   });
 
