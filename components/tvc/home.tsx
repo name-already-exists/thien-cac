@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { Story } from "@/lib/data";
 import { fetchAllStories } from "@/lib/db";
-import { getReadingHistory } from "@/lib/reading-history";
+import { getReadingHistory, removeReadingEntry, type ReadingEntry } from "@/lib/reading-history";
 import { StoryCover } from "./story-cover";
 import { Icon } from "./icons";
 
@@ -80,12 +80,14 @@ function StoryListSection({
   entries,
   onPick,
   onRead,
+  onRemove,
 }: {
   title: string;
   han?: string;
   entries: { story: Story; chapter: number }[];
   onPick: (s: Story) => void;
   onRead: (s: Story, chapter: number) => void;
+  onRemove?: (storyId: string) => void;
 }) {
   return (
     <section className="tvc-section">
@@ -97,7 +99,17 @@ function StoryListSection({
           const statusDot = s.status === "completed" ? "#4A6FA5" : s.status === "paused" ? "#C9842C" : "#4A7C59";
           const statusLabel = s.status === "completed" ? "Hoàn thành" : s.status === "paused" ? "Tạm ngưng" : "Đang ra";
           return (
-            <div className="tvc-story-row" key={s.id} onClick={() => onPick(s)}>
+            <div className="tvc-story-row" key={s.id} onClick={() => onPick(s)} style={{ position: "relative" }}>
+              {onRemove && (
+                <button
+                  className="tvc-btn tvc-btn-primary"
+                  style={{ position: "absolute", top: 6, right: 6, padding: "6px 8px", lineHeight: 1 }}
+                  onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
+                  title="Xóa khỏi danh sách đang đọc"
+                >
+                  <Icon name="trash" size={20} />
+                </button>
+              )}
               <StoryCover story={s} size="sm" />
               <div className="info">
                 <div className="title">{s.title}</div>
@@ -307,10 +319,15 @@ function FeaturedGrid({ stories, onPick, onRead }: Props & { stories: Story[] })
 
 export function Home({ onPick, onRead }: Props) {
   const [stories, setStories] = useState<Story[]>([]);
+  const [readingHistory, setReadingHistory] = useState<ReadingEntry[]>([]);
 
   useEffect(() => {
     fetchAllStories().then(setStories);
   }, []);
+
+  useEffect(() => {
+    if (stories.length) setReadingHistory(getReadingHistory());
+  }, [stories]);
 
   const recent = [...stories].sort((a, b) => {
     if (!a.lastChapterAt) return 1;
@@ -318,13 +335,16 @@ export function Home({ onPick, onRead }: Props) {
     return new Date(b.lastChapterAt).getTime() - new Date(a.lastChapterAt).getTime();
   });
 
-  // Build reading list from localStorage history, matched against loaded stories
-  const history = stories.length ? getReadingHistory() : [];
   const storyMap = new Map(stories.map((s) => [s.id, s]));
-  const readingEntries = history
+  const readingEntries = readingHistory
     .map((e) => ({ story: storyMap.get(e.id), chapter: e.chapter }))
     .filter((e): e is { story: Story; chapter: number } => e.story !== undefined)
     .slice(0, 5);
+
+  const handleRemoveReading = (storyId: string) => {
+    removeReadingEntry(storyId);
+    setReadingHistory(getReadingHistory());
+  };
 
   return (
     <div>
@@ -340,6 +360,7 @@ export function Home({ onPick, onRead }: Props) {
                   entries={readingEntries}
                   onPick={onPick}
                   onRead={(s, chapter) => onRead(s, chapter)}
+                  onRemove={handleRemoveReading}
                 />
                 <OrnDivider />
               </>

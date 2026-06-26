@@ -5,7 +5,7 @@ type IconName =
   | "history" | "settings" | "user" | "chevronRight" | "chevronLeft"
   | "chevronDown" | "chevronUp" | "star" | "book" | "bookOpen" | "type" | "sunMoon"
   | "alignJustify" | "arrowRight" | "arrowLeft" | "flame" | "sparkles"
-  | "moreHorizontal" | "x" | "plus" | "minus" | "heart" | "eye"
+  | "moreHorizontal" | "x" | "plus" | "minus" | "heart" | "eye" | "trash"
   | "messageCircle" | "chevronsLeft" | "chevronsRight" | "sword";
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -32,6 +32,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   sparkles: <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></>,
   moreHorizontal: <><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></>,
   x: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+  trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
   plus: <><path d="M5 12h14"/><path d="M12 5v14"/></>,
   minus: <path d="M5 12h14"/>,
   heart: <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>,

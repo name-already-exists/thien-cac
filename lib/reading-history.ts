@@ -18,3 +18,9 @@ export function saveReadingProgress(storyId: string, chapterNum: number) {
   list.unshift({ id: storyId, chapter: chapterNum, readAt: Date.now() });
   localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX)));
 }
+
+export function removeReadingEntry(storyId: string) {
+  if (typeof window === "undefined") return;
+  const list = getReadingHistory().filter((e) => e.id !== storyId);
+  localStorage.setItem(KEY, JSON.stringify(list));
+}
