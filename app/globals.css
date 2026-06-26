@@ -512,7 +512,7 @@
 .tvc-reading-bar .fill { height: 100%; background: linear-gradient(90deg, var(--brand-primary), var(--brand-gold)); border-radius: 999px; transition: width 400ms var(--ease-out); }
 
 /* ─── Cover Grid ─── */
-.tvc-cover-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px 16px; }
+.tvc-cover-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px 16px; }
 .tvc-cover-card { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
 .tvc-cover-card .ti { font-family: var(--font-serif-vn); font-size: 14px; font-weight: 600; color: var(--fg-1); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tvc-cover-card .au { font-size: 12px; color: var(--fg-3); }
@@ -721,7 +721,7 @@
   .tvc-featured-grid { grid-template-columns: 1fr; gap: 20px; }
   .tvc-featured-side { grid-template-rows: auto; grid-template-columns: 1fr 1fr; gap: 10px; }
   .tvc-home-grid { grid-template-columns: 1fr; gap: 32px; }
-  .tvc-cover-grid { grid-template-columns: repeat(4, 1fr); }
+  .tvc-cover-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .tvc-detail-body { grid-template-columns: 1fr; }
   .tvc-header .search-wrap { width: 220px; }
   .tvc-header .username { display: none; }
@@ -752,7 +752,7 @@
   .tvc-section { padding: 32px 0 12px; }
   .tvc-section-head h2 { font-size: 20px; }
   .tvc-story-row { gap: 12px; padding: 12px 0; }
-  .tvc-cover-grid { grid-template-columns: repeat(3, 1fr); gap: 14px 10px; }
+  .tvc-cover-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 10px; }
   .tvc-btn { padding: 9px 14px; font-size: 13px; }
   .tvc-btn-lg { padding: 11px 18px; font-size: 14px; }
   .tvc-detail-hero-inner { grid-template-columns: 1fr; padding: 32px 16px 24px; gap: 20px; text-align: center; }
@@ -778,7 +778,7 @@
 }
 
 @media (max-width: 480px) {
-  .tvc-cover-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
+  .tvc-cover-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px; }
   .tvc-featured-main .feature-title { font-size: 22px; }
 }
 
