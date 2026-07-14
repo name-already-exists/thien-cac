@@ -628,6 +628,55 @@
 .tvc-page-nav { color: var(--fg-3); font-size: 15px; }
 .tvc-page-ellipsis { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 36px; color: var(--fg-3); font-size: 13px; }
 
+/* ─── Chapter list (TOC) popup ─── */
+.tvc-toc-backdrop {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(26, 20, 16, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: tvcFadeIn 160ms var(--ease-out);
+}
+.tvc-toc-modal {
+  width: 100%; max-width: 620px; max-height: 82vh;
+  background: var(--bg-card); border-radius: 14px;
+  box-shadow: var(--shadow-xl);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.tvc-toc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid var(--border-1); }
+.tvc-toc-head h3 { margin: 0; font-family: var(--font-serif-vn); font-size: 19px; font-weight: 700; color: var(--fg-1); }
+.tvc-toc-head .sub { margin-top: 4px; font-size: 12px; color: var(--fg-3); }
+.tvc-toc-head .actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.tvc-toc-body { padding: 6px 22px; overflow-y: auto; flex: 1; }
+.tvc-toc-row { display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-bottom: 1px solid var(--border-1); cursor: pointer; font-size: 13px; }
+.tvc-toc-row:last-child { border-bottom: none; }
+.tvc-toc-row:hover { background: var(--bg-inset); }
+.tvc-toc-row .num { color: var(--fg-3); font-family: var(--font-mono-tvc); font-size: 12px; min-width: 78px; flex-shrink: 0; }
+.tvc-toc-row .name { flex: 1; color: var(--brand-primary); font-weight: 500; }
+.tvc-toc-row .date { color: var(--fg-3); font-size: 11px; flex-shrink: 0; }
+.tvc-toc-row.current {
+  --toc-current: #00A86B;
+  background: color-mix(in srgb, var(--toc-current) 12%, transparent);
+  border-left: 3px solid var(--toc-current); padding-left: 11px; margin-left: -1px;
+}
+.tvc-toc-row.current:hover { background: color-mix(in srgb, var(--toc-current) 12%, transparent); }
+.tvc-toc-row.current .num { color: var(--toc-current); }
+.tvc-toc-row.current .name { color: var(--toc-current); font-weight: 700; }
+.tvc-toc-row .current-tag {
+  flex-shrink: 0; font-size: 11px; font-weight: 600; color: #00A86B;
+  background: var(--bg-card); border: 1px solid #00A86B; border-radius: 999px;
+  padding: 2px 9px;
+}
+.tvc-toc-foot { padding: 12px 22px 20px; border-top: 1px solid var(--border-1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.tvc-toc-foot .tvc-pagination { margin-top: 0; }
+.tvc-toc-jump { display: flex; gap: 6px; }
+.tvc-toc-jump input { width: 70px; padding: 7px 10px; border: 1px solid var(--border-1); border-radius: 6px; background: var(--bg-inset); color: var(--fg-1); font-size: 12px; outline: none; }
+.tvc-toc-jump .tvc-btn { padding: 7px 14px; font-size: 12px; }
+@media (max-width: 640px) {
+  .tvc-toc-backdrop { padding: 0; align-items: flex-end; }
+  .tvc-toc-modal { max-width: none; max-height: 88vh; border-radius: 14px 14px 0 0; }
+  .tvc-toc-foot { justify-content: center; }
+}
+
 /* ─── Recommended aside ─── */
 .tvc-rec-row { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
 .tvc-rec-row:hover { background: var(--bg-inset); }

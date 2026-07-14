@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import type { Story } from "@/lib/data";
-import { fetchChapterContent } from "@/lib/db";
+import type { Chapter, Story } from "@/lib/data";
+import { fetchChapterContent, fetchChapters } from "@/lib/db";
 import { Icon, ScrollToTop } from "./icons";
+import {
+  getReaderSettings,
+  saveReaderSettings,
+  type FontFamily,
+  type LineHeight,
+  type ReaderSettings,
+  type Theme,
+} from "@/lib/reader-settings";
 
 type Props = {
   story: Story;
@@ -13,10 +21,6 @@ type Props = {
   onDetail: (s: Story) => void;
   onChapterLoad?: (num: number, title: string) => void;
 };
-
-type Theme = "paper" | "sepia" | "green" | "night";
-type LineHeight = "compact" | "normal" | "loose";
-type FontFamily = "serif" | "sans";
 
 const THEME_MAP: Record<Theme, { bg: string; fg: string }> = {
   paper: { bg: "#FBF7EE", fg: "#1A1410" },
@@ -44,6 +48,153 @@ function OrnDivider({ color }: { color?: string }) {
   );
 }
 
+const TOC_PER_PAGE = 50;
+
+function TocModal({
+  story,
+  currentChapter,
+  onSelect,
+  onClose,
+  onViewDetail,
+}: {
+  story: Story;
+  currentChapter: number;
+  onSelect: (num: number) => void;
+  onClose: () => void;
+  onViewDetail: () => void;
+}) {
+  const [{ chapters, loading }, setChapterState] = useState<{ chapters: Chapter[]; loading: boolean }>({
+    chapters: [],
+    loading: true,
+  });
+  const [currentPage, setCurrentPage] = useState(() => Math.floor((currentChapter - 1) / TOC_PER_PAGE) + 1);
+  const [pageInput, setPageInput] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchChapters(story.dbId).then((data) => {
+      if (cancelled) return;
+      setChapterState({ chapters: [...data].sort((a, b) => a.num - b.num), loading: false });
+    });
+    return () => { cancelled = true; };
+  }, [story.dbId]);
+
+  const totalPages = Math.max(1, Math.ceil(chapters.length / TOC_PER_PAGE));
+  const pageChapters = chapters.slice((currentPage - 1) * TOC_PER_PAGE, currentPage * TOC_PER_PAGE);
+
+  function goToPage(p: number) {
+    setCurrentPage(Math.max(1, Math.min(p, totalPages)));
+  }
+
+  function handlePageSearch() {
+    const p = parseInt(pageInput);
+    if (!isNaN(p)) goToPage(p);
+  }
+
+  function buildPageNumbers(): (number | "...")[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [1];
+    if (currentPage > 4) pages.push("...");
+    for (let i = Math.max(2, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) {
+      pages.push(i);
+    }
+    if (currentPage < totalPages - 3) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  }
+
+  return (
+    <div className="tvc-toc-backdrop" onClick={onClose}>
+      <div className="tvc-toc-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tvc-toc-head">
+          <div>
+            <h3>Mục Lục</h3>
+            <div className="sub">
+              目錄 · {(chapters.length || story.chapters).toLocaleString("vi-VN")} chương
+            </div>
+          </div>
+          <div className="actions">
+            <button className="tvc-icon-btn" onClick={onViewDetail} title="Xem trang truyện đầy đủ">
+              <Icon name="library" size={15} />
+            </button>
+            <button className="tvc-icon-btn" onClick={onClose} title="Đóng">
+              <Icon name="x" size={15} />
+            </button>
+          </div>
+        </div>
+
+        <div className="tvc-toc-body">
+          {loading ? (
+            <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13 }}>
+              Đang tải…
+            </div>
+          ) : pageChapters.length === 0 ? (
+            <div style={{ padding: "24px 0", textAlign: "center", color: "var(--fg-3)", fontSize: 13 }}>
+              Chưa có chương nào.
+            </div>
+          ) : (
+            pageChapters.map((ch) => {
+              const isCurrent = ch.num === currentChapter;
+              return (
+                <div
+                  key={ch.num}
+                  ref={isCurrent ? (el) => el?.scrollIntoView({ block: "center" }) : undefined}
+                  className={`tvc-toc-row ${isCurrent ? "current" : ""}`}
+                  onClick={() => onSelect(ch.num)}
+                >
+                  <span className="num">Chương {ch.num}</span>
+                  <span className="name">{ch.name || "—"}</span>
+                  {isCurrent ? (
+                    <span className="current-tag">Đang đọc</span>
+                  ) : (
+                    <span className="date">{ch.date}</span>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="tvc-toc-foot">
+            <div className="tvc-pagination">
+              <button className="tvc-page-btn tvc-page-nav" onClick={() => goToPage(1)} disabled={currentPage === 1} title="Trang đầu">«</button>
+              <button className="tvc-page-btn tvc-page-nav" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} title="Trang trước">‹</button>
+              {buildPageNumbers().map((p, i) =>
+                p === "..." ? (
+                  <span key={`e${i}`} className="tvc-page-ellipsis">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    className={`tvc-page-btn${p === currentPage ? " active" : ""}`}
+                    onClick={() => goToPage(p as number)}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+              <button className="tvc-page-btn tvc-page-nav" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} title="Trang sau">›</button>
+              <button className="tvc-page-btn tvc-page-nav" onClick={() => goToPage(totalPages)} disabled={currentPage === totalPages} title="Trang cuối">»</button>
+            </div>
+            <div className="tvc-toc-jump">
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                placeholder="Trang"
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handlePageSearch()}
+              />
+              <button className="tvc-btn tvc-btn-primary" onClick={handlePageSearch}>Đến</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Reader({ story, chapterNumber, initialChapterData, onBack, onDetail, onChapterLoad }: Props) {
   const [currentChapter, setCurrentChapter] = useState(chapterNumber);
 
@@ -57,11 +208,21 @@ export function Reader({ story, chapterNumber, initialChapterData, onBack, onDet
   const chapterData = chapterCache?.num === currentChapter ? chapterCache : null;
   const loading = chapterCache?.num !== currentChapter;
 
-  const [chromeOpen, setChromeOpen]   = useState(false);
-  const [fontSize, setFontSize]       = useState(18);
-  const [fontFamily, setFontFamily]   = useState<FontFamily>("serif");
-  const [theme, setTheme]             = useState<Theme>("paper");
-  const [lineHeight, setLineHeight]   = useState<LineHeight>("normal");
+  const [chromeOpen, setChromeOpen] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
+  // Reader only ever mounts after client-side data fetch resolves, so reading
+  // localStorage synchronously here carries no hydration-mismatch risk.
+  const [settings, setSettings] = useState<ReaderSettings>(getReaderSettings);
+  const { fontSize, fontFamily, theme, lineHeight } = settings;
+  const setFontSize    = (v: number)     => setSettings((s) => ({ ...s, fontSize: v }));
+  const setFontFamily  = (v: FontFamily) => setSettings((s) => ({ ...s, fontFamily: v }));
+  const setTheme        = (v: Theme)      => setSettings((s) => ({ ...s, theme: v }));
+  const setLineHeight   = (v: LineHeight) => setSettings((s) => ({ ...s, lineHeight: v }));
+
+  // Persist reading preferences whenever they change
+  useEffect(() => {
+    saveReaderSettings(settings);
+  }, [settings]);
 
   useEffect(() => {
     if (chapterCache?.num === currentChapter) {
@@ -122,7 +283,7 @@ export function Reader({ story, chapterNumber, initialChapterData, onBack, onDet
           >
             <Icon name="chevronLeft" size={16} /> Chương trước
           </button>
-          <button className="tvc-btn tvc-btn-ghost" onClick={() => onDetail(story)}>
+          <button className="tvc-btn tvc-btn-ghost" onClick={() => setTocOpen(true)}>
             <Icon name="library" size={16} /> Mục lục
           </button>
           <button
@@ -174,7 +335,7 @@ export function Reader({ story, chapterNumber, initialChapterData, onBack, onDet
           >
             <Icon name="chevronLeft" size={16} /> Chương trước
           </button>
-          <button className="tvc-btn tvc-btn-ghost" onClick={() => onDetail(story)}>
+          <button className="tvc-btn tvc-btn-ghost" onClick={() => setTocOpen(true)}>
             <Icon name="library" size={16} /> Mục lục
           </button>
           <button
@@ -240,6 +401,23 @@ export function Reader({ story, chapterNumber, initialChapterData, onBack, onDet
             </div>
           </div>
         </div>
+      )}
+
+      {/* Table-of-contents popup */}
+      {tocOpen && (
+        <TocModal
+          story={story}
+          currentChapter={currentChapter}
+          onSelect={(num) => {
+            setCurrentChapter(num);
+            setTocOpen(false);
+          }}
+          onClose={() => setTocOpen(false)}
+          onViewDetail={() => {
+            setTocOpen(false);
+            onDetail(story);
+          }}
+        />
       )}
     </div>
   );
