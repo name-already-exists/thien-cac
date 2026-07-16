@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bảng Điều Khiển — Thiên Các</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Serif:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles/tokens.css">
+<link rel="stylesheet" href="/styles/styles.css">
+</head>
+<body>
+
+<header class="header">
+  <button class="header__brand" id="brand-btn">
+    <span class="header__seal">雲</span>
+    <span class="header__titles">
+      <div class="header__title">Bảng Điều Khiển</div>
+      <div class="header__subtitle">Thiên Các · Crawl &amp; Import</div>
+    </span>
+  </button>
+  <nav class="header__nav">
+    <button class="nav-btn" data-nav="list">Danh sách truyện</button>
+    <button class="nav-btn" data-nav="add">Thêm truyện</button>
+    <button class="nav-btn" data-nav="settings">Cấu hình</button>
+  </nav>
+  <div class="header__addr" id="addr"></div>
+</header>
+
+<main class="container" id="app"></main>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

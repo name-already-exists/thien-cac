@@ -1,0 +1,168 @@
+/* =================================================================
+   THIÊN CÁC · Colors, Type, Spacing, Shadows, Radii
+   Nguồn: claude_design project "App quản lý crawl truyện" — design system
+   ================================================================= */
+
+:root {
+  /* ─── COLORS · Light Theme (Giấy / Paper) — DEFAULT ──────────── */
+
+  --bg-page:       #F5EFE3;
+  --bg-surface:    #FBF7EE;
+  --bg-card:       #FFFFFF;
+  --bg-inset:      #EFE7D5;
+
+  --fg-ink:        #1A1410;
+  --fg-1:          #1A1410;
+  --fg-2:          #5C4938;
+  --fg-3:          #8B7355;
+  --fg-4:          #B8A582;
+  --fg-on-primary: #FBF7EE;
+
+  --brand-primary:        #8B2331;
+  --brand-primary-hover:  #6E1A26;
+  --brand-primary-press:  #561420;
+  --brand-primary-soft:   #F4DDD8;
+
+  --brand-gold:           #A8853A;
+  --brand-gold-hover:     #8B6E2D;
+  --brand-gold-soft:      #F0E5C8;
+
+  --border-1:      #E6D9C2;
+  --border-2:      #D4C3A3;
+  --border-3:      #C0AB85;
+  --divider:       #EDE2CC;
+
+  --success:       #4A7C59;
+  --success-soft:  #DCE9D7;
+  --warning:       #C9842C;
+  --warning-soft:  #F6E4C2;
+  --danger:        #B23B3B;
+  --danger-soft:   #F2D6D2;
+  --info:          #4A6FA5;
+  --info-soft:     #D8E2F0;
+
+  --font-sans:       'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif-vn:   'Noto Serif', Georgia, serif;
+  --font-serif-han:  'Noto Serif SC', 'Noto Serif', serif;
+  --font-mono:       'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  --fs-h1:         32px;   --lh-h1:        1.2;
+  --fs-h2:         24px;   --lh-h2:        1.3;
+  --fs-h3:         20px;   --lh-h3:        1.35;
+  --fs-body:       15px;   --lh-body:      1.55;
+  --fs-body-sm:    14px;   --lh-body-sm:   1.5;
+  --fs-caption:    13px;   --lh-caption:   1.4;
+  --fs-tiny:       11px;   --lh-tiny:      1.3;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  --tracking-caps: 0.12em;
+
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   32px;
+
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  --shadow-xs:   0 1px 2px rgba(60, 40, 20, 0.05);
+  --shadow-sm:   0 2px 6px rgba(60, 40, 20, 0.07);
+  --shadow-md:   0 4px 14px rgba(60, 40, 20, 0.08);
+  --shadow-lg:   0 12px 32px rgba(60, 40, 20, 0.12);
+  --shadow-cover: 0 8px 28px rgba(60, 40, 20, 0.22);
+
+  --ring-focus: 0 0 0 3px rgba(139, 35, 49, 0.22);
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-base:   200ms;
+
+  --container-wide:    1280px;
+  --header-h:          64px;
+}
+
+[data-theme="dark"] {
+  --bg-page:       #0F0D0C;
+  --bg-surface:    #181411;
+  --bg-card:       #1F1B17;
+  --bg-inset:      #14110E;
+
+  --fg-ink:        #F0E8D8;
+  --fg-1:          #F0E8D8;
+  --fg-2:          #B8A98E;
+  --fg-3:          #8A7C66;
+  --fg-4:          #5C5043;
+  --fg-on-primary: #FBF7EE;
+
+  --brand-primary:        #B83847;
+  --brand-primary-hover:  #CE4858;
+  --brand-primary-press:  #9E2A38;
+  --brand-primary-soft:   #2B181B;
+
+  --brand-gold:           #D4B264;
+  --brand-gold-hover:     #E0C27A;
+  --brand-gold-soft:      #2A2418;
+
+  --border-1:      #2D2722;
+  --border-2:      #3D352C;
+  --border-3:      #524736;
+  --divider:       #241F1A;
+
+  --success-soft:  #1C2B22;
+  --warning-soft:  #2B2418;
+  --danger-soft:   #2B1B1B;
+  --info-soft:     #1B2230;
+
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm:   0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md:   0 4px 14px rgba(0, 0, 0, 0.4);
+  --shadow-lg:   0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-cover:0 8px 28px rgba(0, 0, 0, 0.65);
+
+  --ring-focus: 0 0 0 3px rgba(184, 56, 71, 0.32);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-page:       #0F0D0C;
+    --bg-surface:    #181411;
+    --bg-card:       #1F1B17;
+    --bg-inset:      #14110E;
+
+    --fg-ink:        #F0E8D8;
+    --fg-1:          #F0E8D8;
+    --fg-2:          #B8A98E;
+    --fg-3:          #8A7C66;
+    --fg-4:          #5C5043;
+    --fg-on-primary: #FBF7EE;
+
+    --brand-primary:        #B83847;
+    --brand-primary-hover:  #CE4858;
+    --brand-primary-press:  #9E2A38;
+    --brand-primary-soft:   #2B181B;
+
+    --brand-gold:           #D4B264;
+    --brand-gold-hover:     #E0C27A;
+    --brand-gold-soft:      #2A2418;
+
+    --border-1:      #2D2722;
+    --border-2:      #3D352C;
+    --border-3:      #524736;
+    --divider:       #241F1A;
+
+    --success-soft:  #1C2B22;
+    --warning-soft:  #2B2418;
+    --danger-soft:   #2B1B1B;
+    --info-soft:     #1B2230;
+  }
+}

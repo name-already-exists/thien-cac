@@ -1,0 +1,15 @@
+{
+  "name": "dieu-khien",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bảng điều khiển crawl (thien-dao) + import (ngoc-gian) truyện — chạy local, có giao diện web.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

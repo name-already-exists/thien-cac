@@ -41,6 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 /ngoc-gian/node_modules
+/dieu-khien/node_modules
+/dieu-khien/.settings.json
 
 /thien-dao/storage
 
