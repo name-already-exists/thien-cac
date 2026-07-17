@@ -188,4 +188,5 @@ export async function fetchChapterContent(
 /** Ghi nhận 1 lượt đọc cho truyện (fire-and-forget, không chặn UI) */
 export function recordStoryView(storyDbId: number): void {
   void createClient().rpc('record_story_view', { p_story_id: storyDbId })
+    .then(({ error }) => { if (error) console.error('[recordStoryView]', error) })
 }
