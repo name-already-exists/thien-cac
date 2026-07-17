@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Story } from "@/lib/data";
-import { fetchStoryBySlug, fetchChapterContent } from "@/lib/db";
+import { fetchStoryBySlug, fetchChapterContent, recordStoryView } from "@/lib/db";
 import { parseChapterNum, chapterSlug } from "@/lib/slugify";
 import { saveReadingProgress } from "@/lib/reading-history";
 import { Reader } from "@/components/tvc/reader";
@@ -57,6 +57,7 @@ if (cancelled) return;
         onDetail={(s) => router.push(`/${s.id}`)}
         onChapterLoad={(num, title) => {
           saveReadingProgress(pageData.story.id, num);
+          recordStoryView(pageData.story.dbId);
           window.history.replaceState(null, '', `/${storySlug}/${chapterSlug(num, title)}`);
         }}
       />

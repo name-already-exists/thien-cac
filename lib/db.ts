@@ -184,3 +184,8 @@ export async function fetchChapterContent(
 
   return { chapterNumber: data.chapter_number, title: data.title, content }
 }
+
+/** Ghi nhận 1 lượt đọc cho truyện (fire-and-forget, không chặn UI) */
+export function recordStoryView(storyDbId: number): void {
+  void createClient().rpc('record_story_view', { p_story_id: storyDbId })
+}
